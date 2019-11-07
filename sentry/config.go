@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/fa93hws/go-sentry/sentry"
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 )
 
 // Config is the configuration structure used to instantiate the Sentry
@@ -26,7 +26,7 @@ func (c *Config) Client() (interface{}, error) {
 	}
 
 	log.Printf("[INFO] Instantiating Sentry client...")
-	cl := sentry.NewClient(nil, baseURL, c.Token)
+	cl := sentryclient.NewClient(nil, baseURL, c.Token)
 
 	return cl, nil
 }

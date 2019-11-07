@@ -3,8 +3,8 @@ package sentry
 import (
 	"log"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func resourceSentryTeam() *schema.Resource {
@@ -55,10 +55,10 @@ func resourceSentryTeam() *schema.Resource {
 }
 
 func resourceSentryTeamCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
-	params := &sentry.CreateTeamParams{
+	params := &sentryclient.CreateTeamParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
@@ -74,7 +74,7 @@ func resourceSentryTeamCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryTeamRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
@@ -98,11 +98,11 @@ func resourceSentryTeamRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryTeamUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
-	params := &sentry.UpdateTeamParams{
+	params := &sentryclient.UpdateTeamParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
@@ -118,7 +118,7 @@ func resourceSentryTeamUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryTeamDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)

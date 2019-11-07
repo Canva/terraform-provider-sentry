@@ -6,14 +6,14 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/fa93hws/go-sentry/sentry"
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
 
 func TestAccSentryProject_basic(t *testing.T) {
-	var project sentry.Project
+	var project sentryclient.Project
 
 	random := acctest.RandInt()
 	newProjectSlug := fmt.Sprintf("test-project-%d", random)
@@ -69,7 +69,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 }
 
 func testAccCheckSentryProjectDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
+	client := testAccProvider.Meta().(*sentryclient.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_project" {
@@ -90,7 +90,7 @@ func testAccCheckSentryProjectDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckSentryProjectExists(n string, proj *sentry.Project) resource.TestCheckFunc {
+func testAccCheckSentryProjectExists(n string, proj *sentryclient.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -101,7 +101,7 @@ func testAccCheckSentryProjectExists(n string, proj *sentry.Project) resource.Te
 			return errors.New("No project ID is set")
 		}
 
-		client := testAccProvider.Meta().(*sentry.Client)
+		client := testAccProvider.Meta().(*sentryclient.Client)
 		sentryProj, _, err := client.Projects.Get(
 			rs.Primary.Attributes["organization"],
 			rs.Primary.ID,
@@ -124,7 +124,7 @@ type testAccSentryProjectExpectedAttributes struct {
 	AllowedDomains []string
 }
 
-func testAccCheckSentryProjectAttributes(proj *sentry.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if proj.Name != want.Name {
 			return fmt.Errorf("got proj %q; want %q", proj.Name, want.Name)

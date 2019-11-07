@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/fa93hws/go-sentry/sentry"
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -99,11 +99,11 @@ func resourceSentryProject() *schema.Resource {
 }
 
 func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
 	team := d.Get("team").(string)
-	params := &sentry.CreateProjectParams{
+	params := &sentryclient.CreateProjectParams{
 		Name:     d.Get("name").(string),
 		Slug:     d.Get("slug").(string),
 		Platform: d.Get("platform").(string),
@@ -119,7 +119,7 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
@@ -151,11 +151,11 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
-	params := &sentry.UpdateProjectParams{
+	params := &sentryclient.UpdateProjectParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
@@ -191,7 +191,7 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceSentryProjectDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)

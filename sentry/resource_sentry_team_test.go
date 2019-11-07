@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func TestAccSentryTeam_basic(t *testing.T) {
-	var team sentry.Team
+	var team sentryclient.Team
 
 	random := acctest.RandInt()
 	newTeamSlug := fmt.Sprintf("test-team-changed-%d", random)
@@ -55,7 +55,7 @@ func TestAccSentryTeam_basic(t *testing.T) {
 }
 
 func testAccCheckSentryTeamDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
+	client := testAccProvider.Meta().(*sentryclient.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_team" {
@@ -79,7 +79,7 @@ func testAccCheckSentryTeamDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckSentryTeamExists(n string, team *sentry.Team) resource.TestCheckFunc {
+func testAccCheckSentryTeamExists(n string, team *sentryclient.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -90,7 +90,7 @@ func testAccCheckSentryTeamExists(n string, team *sentry.Team) resource.TestChec
 			return errors.New("No team ID is set")
 		}
 
-		client := testAccProvider.Meta().(*sentry.Client)
+		client := testAccProvider.Meta().(*sentryclient.Client)
 		sentryTeam, _, err := client.Teams.Get(
 			rs.Primary.Attributes["organization"],
 			rs.Primary.ID,
@@ -110,7 +110,7 @@ type testAccSentryTeamExpectedAttributes struct {
 	Slug        string
 }
 
-func testAccCheckSentryTeamAttributes(team *sentry.Team, want *testAccSentryTeamExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckSentryTeamAttributes(team *sentryclient.Team, want *testAccSentryTeamExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if team.Name != want.Name {
 			return fmt.Errorf("got team %q; want %q", team.Name, want.Name)
