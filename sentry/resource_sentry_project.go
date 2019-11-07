@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/fa93hws/go-sentry/sentry"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceSentryProject() *schema.Resource {
@@ -95,8 +95,9 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 	org := d.Get("organization").(string)
 	team := d.Get("team").(string)
 	params := &sentry.CreateProjectParams{
-		Name: d.Get("name").(string),
-		Slug: d.Get("slug").(string),
+		Name:     d.Get("name").(string),
+		Slug:     d.Get("slug").(string),
+		Platform: d.Get("platform").(string),
 	}
 
 	proj, _, err := client.Projects.Create(org, team, params)

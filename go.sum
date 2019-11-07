@@ -101,6 +101,8 @@ github.com/dylanmei/iso8601 v0.1.0/go.mod h1:w9KhXSgIyROl1DefbMYIE7UVSIvELTbMrCf
 github.com/dylanmei/winrmtest v0.0.0-20190225150635-99b7fe2fddf1/go.mod h1:lcy9/2gH1jn/VCLouHA6tOEwLoNVd4GW6zhuKLmHC2Y=
 github.com/fa93hws/go-sentry v1.2.1-0.20191107034951-543bee31b10f h1:cxtfPVEgk0VgTssC0z7UqDnX2T1oX65jva2i4ILeTY4=
 github.com/fa93hws/go-sentry v1.2.1-0.20191107034951-543bee31b10f/go.mod h1:IA473QCwZPQ+WXUXVMI1x3bPbaCFE7g9WQzAFA/MtFk=
+github.com/fa93hws/go-sentry v1.3.0 h1:4R+jZLumhXdcL4eSNOrmvDQQb+TWh5dxplKXKNkPP1w=
+github.com/fa93hws/go-sentry v1.3.0/go.mod h1:IA473QCwZPQ+WXUXVMI1x3bPbaCFE7g9WQzAFA/MtFk=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
