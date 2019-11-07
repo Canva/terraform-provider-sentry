@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func dataSourceSentryKey() *schema.Resource {
@@ -78,7 +78,7 @@ func dataSourceSentryKey() *schema.Resource {
 }
 
 func dataSourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
@@ -114,7 +114,7 @@ func dataSourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 		len(keys))
 }
 
-func sentryKeyAttributes(d *schema.ResourceData, key *sentry.ProjectKey) error {
+func sentryKeyAttributes(d *schema.ResourceData, key *sentryclient.ProjectKey) error {
 	d.SetId(key.ID)
 	d.Set("name", key.Name)
 	d.Set("public", key.Public)

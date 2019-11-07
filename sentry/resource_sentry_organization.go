@@ -3,8 +3,8 @@ package sentry
 import (
 	"log"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func resourceSentryOrganization() *schema.Resource {
@@ -39,12 +39,12 @@ func resourceSentryOrganization() *schema.Resource {
 }
 
 func resourceSentryOrganizationCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
-	params := &sentry.CreateOrganizationParams{
+	params := &sentryclient.CreateOrganizationParams{
 		Name:       d.Get("name").(string),
 		Slug:       d.Get("slug").(string),
-		AgreeTerms: sentry.Bool(d.Get("agree_terms").(bool)),
+		AgreeTerms: sentryclient.Bool(d.Get("agree_terms").(bool)),
 	}
 	log.Printf("[DEBUG] Creating Sentry organization %s", params.Name)
 
@@ -58,7 +58,7 @@ func resourceSentryOrganizationCreate(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceSentryOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	log.Printf("[DEBUG] Reading Sentry organization %s", slug)
@@ -77,11 +77,11 @@ func resourceSentryOrganizationRead(d *schema.ResourceData, meta interface{}) er
 }
 
 func resourceSentryOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	log.Printf("[DEBUG] Updating Sentry organization %s", slug)
-	params := &sentry.UpdateOrganizationParams{
+	params := &sentryclient.UpdateOrganizationParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
@@ -96,7 +96,7 @@ func resourceSentryOrganizationUpdate(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceSentryOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	log.Printf("[DEBUG] Deleting Sentry organization %s", slug)

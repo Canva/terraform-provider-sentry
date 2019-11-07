@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func TestAccSentryKey_basic(t *testing.T) {
-	var key sentry.ProjectKey
+	var key sentryclient.ProjectKey
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -47,7 +47,7 @@ func TestAccSentryKey_basic(t *testing.T) {
 }
 
 func testAccCheckSentryKeyDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
+	client := testAccProvider.Meta().(*sentryclient.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_key" {
@@ -73,7 +73,7 @@ func testAccCheckSentryKeyDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckSentryKeyExists(n string, projectKey *sentry.ProjectKey) resource.TestCheckFunc {
+func testAccCheckSentryKeyExists(n string, projectKey *sentryclient.ProjectKey) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -84,7 +84,7 @@ func testAccCheckSentryKeyExists(n string, projectKey *sentry.ProjectKey) resour
 			return errors.New("No key ID is set")
 		}
 
-		client := testAccProvider.Meta().(*sentry.Client)
+		client := testAccProvider.Meta().(*sentryclient.Client)
 		keys, _, err := client.ProjectKeys.List(
 			rs.Primary.Attributes["organization"],
 			rs.Primary.Attributes["project"],

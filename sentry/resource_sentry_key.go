@@ -3,8 +3,8 @@ package sentry
 import (
 	"net/http"
 
+	"github.com/Canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func resourceSentryKey() *schema.Resource {
@@ -74,11 +74,11 @@ func resourceSentryKey() *schema.Resource {
 }
 
 func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
-	params := &sentry.CreateProjectKeyParams{
+	params := &sentryclient.CreateProjectKeyParams{
 		Name: d.Get("name").(string),
 	}
 
@@ -92,7 +92,7 @@ func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
@@ -140,12 +140,12 @@ func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
-	params := &sentry.UpdateProjectKeyParams{
+	params := &sentryclient.UpdateProjectKeyParams{
 		Name: d.Get("name").(string),
 	}
 
@@ -159,7 +159,7 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)

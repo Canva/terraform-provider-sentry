@@ -1,9 +1,9 @@
-module github.com/fa93hws/terraform-provider-sentry
+module github.com/Canva/terraform-provider-sentry
 
 require (
 	cloud.google.com/go/storage v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.25.0 // indirect
-	github.com/fa93hws/go-sentry v1.4.0
+	github.com/dghubble/sling v1.1.0
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
@@ -19,7 +19,7 @@ require (
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
+	github.com/stretchr/testify v1.4.0
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/zclconf/go-cty v1.1.0 // indirect
@@ -39,4 +39,4 @@ require (
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999 // indirect
 
-go 1.13
+go 1.12.5
