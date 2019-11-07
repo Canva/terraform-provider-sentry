@@ -3,12 +3,13 @@ package sentry
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 
+	"github.com/fa93hws/go-sentry/sentry"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func TestAccSentryProject_basic(t *testing.T) {
@@ -27,7 +28,8 @@ func TestAccSentryProject_basic(t *testing.T) {
 	    organization = "%s"
 	    team = "${sentry_team.test_team.id}"
 	    name = "Test project changed"
-	    slug = "%s"
+		slug = "%s"
+		allowed_domains = ["www.canva.com", "www.canva.cn"]
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -41,10 +43,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:         "Test project",
-						Organization: testOrganization,
-						Team:         "Test team",
-						SlugPresent:  true,
+						Name:           "Test project",
+						Organization:   testOrganization,
+						Team:           "Test team",
+						SlugPresent:    true,
+						AllowedDomains: []string{"*"},
 					}),
 				),
 			},
@@ -53,10 +56,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:         "Test project changed",
-						Organization: testOrganization,
-						Team:         "Test team",
-						Slug:         newProjectSlug,
+						Name:           "Test project changed",
+						Organization:   testOrganization,
+						Team:           "Test team",
+						Slug:           newProjectSlug,
+						AllowedDomains: []string{"www.canva.com", "www.canva.cn"},
 					}),
 				),
 			},
@@ -115,8 +119,9 @@ type testAccSentryProjectExpectedAttributes struct {
 	Organization string
 	Team         string
 
-	SlugPresent bool
-	Slug        string
+	SlugPresent    bool
+	Slug           string
+	AllowedDomains []string
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentry.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
@@ -139,6 +144,18 @@ func testAccCheckSentryProjectAttributes(proj *sentry.Project, want *testAccSent
 
 		if want.Slug != "" && proj.Slug != want.Slug {
 			return fmt.Errorf("got slug %q; want %q", proj.Slug, want.Slug)
+		}
+
+		if len(want.AllowedDomains) == len(proj.AllowedDomains) {
+			sort.Strings(want.AllowedDomains)
+			sort.Strings(proj.AllowedDomains)
+			for index, _ := range want.AllowedDomains {
+				if want.AllowedDomains[index] != proj.AllowedDomains[index] {
+					return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
+				}
+			}
+		} else {
+			return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
 		}
 
 		return nil

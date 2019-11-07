@@ -83,6 +83,15 @@ func resourceSentryProject() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
+			"allowed_domains": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The domains allowd to be collected",
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 
 			// TODO: Project options
 		},
@@ -134,6 +143,7 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("status", proj.Status)
 	d.Set("digests_min_delay", proj.DigestsMinDelay)
 	d.Set("digests_max_delay", proj.DigestsMaxDelay)
+	d.Set("allowed_domains", proj.AllowedDomains)
 
 	// TODO: Project options
 
@@ -161,6 +171,14 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 
 	if v, ok := d.GetOk("digests_max_delay"); ok {
 		params.DigestsMaxDelay = Int(v.(int))
+	}
+
+	allowed_domains := []string{}
+	for _, url := range d.Get("allowed_domains").([]interface{}) {
+		allowed_domains = append(allowed_domains, url.(string))
+	}
+	if len(allowed_domains) > 0 {
+		params.AllowedDomains = allowed_domains
 	}
 
 	proj, _, err := client.Projects.Update(org, slug, params)

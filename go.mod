@@ -3,7 +3,7 @@ module github.com/fa93hws/terraform-provider-sentry
 require (
 	cloud.google.com/go/storage v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.25.0 // indirect
-	github.com/fa93hws/go-sentry v1.3.0
+	github.com/fa93hws/go-sentry v1.4.0
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
