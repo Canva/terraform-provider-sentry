@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/fa93hws/go-sentry/sentry"
 )
 
 // Config is the configuration structure used to instantiate the Sentry

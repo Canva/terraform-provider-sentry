@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/fa93hws/go-sentry/sentry"
 )
 
 func resourceSentryProject() *schema.Resource {
