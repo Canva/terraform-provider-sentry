@@ -28,6 +28,12 @@ func resourceSentryKey() *schema.Resource {
 				Required:    true,
 				Description: "The slug of the project the key should be created for",
 			},
+			"key_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The ID of the key",
+				Computed:    true,
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -74,6 +80,10 @@ func resourceSentryKey() *schema.Resource {
 }
 
 func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
+	if d.Get("key_id").(string) != "" {
+		d.SetId(d.Get("key_id").(string))
+		return resourceSentryKeyUpdate(d, meta)
+	}
 	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
@@ -116,6 +126,7 @@ func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 			d.Set("secret", key.Secret)
 			d.Set("project_id", key.ProjectID)
 			d.Set("is_active", key.IsActive)
+			d.Set("key_id", key.ID)
 
 			if key.RateLimit != nil {
 				d.Set("rate_limit_window", key.RateLimit.Window)

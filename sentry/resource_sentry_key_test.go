@@ -46,6 +46,30 @@ func TestAccSentryKey_basic(t *testing.T) {
 	})
 }
 
+func TestAccSentryKey_withId(t *testing.T) {
+	var key sentryclient.ProjectKey
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSentryKeyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryKeyUpdateWithId,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSentryKeyExists("sentry_key.test_key", &key),
+					resource.TestCheckResourceAttr("sentry_key.test_key", "name", "Default"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_csp"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckSentryKeyDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*sentryclient.Client)
 
@@ -140,3 +164,29 @@ var testAccSentryKeyUpdateConfig = fmt.Sprintf(`
 		name = "Test key changed"
 	}
 `, testOrganization, testOrganization, testOrganization)
+
+var testAccSentryKeyUpdateWithId = fmt.Sprintf(`
+	resource "sentry_team" "test_team" {
+		organization = "%s"
+		name = "Test team"
+	}
+
+	resource "sentry_project" "test_project" {
+		organization = "%s"
+		team = "${sentry_team.test_team.id}"
+		name = "Test project"
+	}
+
+	data "sentry_key" "default" {
+		organization = "%s"
+		project = "${sentry_project.test_project.id}"
+		name = "Default"
+	}
+
+	resource "sentry_key" "test_key" {
+		organization = "%s"
+		key_id = "${data.sentry_key.default.id}"
+		project = "${sentry_project.test_project.id}"
+		name = "Default"
+	}
+`, testOrganization, testOrganization, testOrganization, testOrganization)
