@@ -34,6 +34,18 @@ func TestAccSentryKey_basic(t *testing.T) {
 				Config: testAccSentryKeyUpdateConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryKeyExists("sentry_key.test_key", &key),
+					resource.TestCheckResourceAttr("sentry_key.test_key", "name", "Test key changed"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_csp"),
+				),
+			},
+			{
+				Config: testAccSentryRateLimitUpdateConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSentryKeyExists("sentry_key.test_key", &key),
 					// This only work if the account has enterprise plan enabled
 					testAccCheckSentryKeyAttributes(&key, &testAccSentryKeyExpectedAttributes{
 						RateLimit: &sentryclient.ProjectKeyRateLimit{
@@ -164,6 +176,25 @@ var testAccSentryKeyConfig = fmt.Sprintf(`
 `, testOrganization, testOrganization, testOrganization)
 
 var testAccSentryKeyUpdateConfig = fmt.Sprintf(`
+	resource "sentry_team" "test_team" {
+		organization = "%s"
+		name = "Test team"
+	}
+
+	resource "sentry_project" "test_project" {
+		organization = "%s"
+		team = "${sentry_team.test_team.id}"
+		name = "Test project"
+	}
+
+	resource "sentry_key" "test_key" {
+		organization = "%s"
+		project = "${sentry_project.test_project.id}"
+		name = "Test key changed"
+	}
+`, testOrganization, testOrganization, testOrganization)
+
+var testAccSentryRateLimitUpdateConfig = fmt.Sprintf(`
 	resource "sentry_team" "test_team" {
 		organization = "%s"
 		name = "Test team"
