@@ -1,4 +1,4 @@
-module github.com/Canva/terraform-provider-sentry
+module github.com/canva/terraform-provider-sentry
 
 require (
 	cloud.google.com/go/storage v1.0.0 // indirect

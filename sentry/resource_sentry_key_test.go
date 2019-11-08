@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Canva/terraform-provider-sentry/sentryclient"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )

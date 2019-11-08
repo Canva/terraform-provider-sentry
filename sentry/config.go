@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/Canva/terraform-provider-sentry/sentryclient"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
 )
 
 // Config is the configuration structure used to instantiate the Sentry

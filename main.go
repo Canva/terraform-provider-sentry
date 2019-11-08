@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Canva/terraform-provider-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentry"
 	"github.com/hashicorp/terraform/plugin"
 )
 

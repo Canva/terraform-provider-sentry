@@ -3,7 +3,7 @@ package sentry
 import (
 	"log"
 
-	"github.com/Canva/terraform-provider-sentry/sentryclient"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
