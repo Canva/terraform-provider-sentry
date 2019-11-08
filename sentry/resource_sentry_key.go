@@ -50,12 +50,16 @@ func resourceSentryKey() *schema.Resource {
 				Computed: true,
 			},
 			"rate_limit_window": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "time window in second for rate_limit_count",
+				Optional:    true,
 			},
 			"rate_limit_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "rate limit for the key in rate_limit_window time",
+				Optional:    true,
 			},
 			"dsn_secret": {
 				Type:     schema.TypeString,

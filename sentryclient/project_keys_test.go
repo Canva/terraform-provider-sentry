@@ -155,6 +155,10 @@ func TestProjectKeyService_Update(t *testing.T) {
 		assertMethod(t, "PUT", r)
 		assertPostJSON(t, map[string]interface{}{
 			"name": "Fabulous Key",
+			"rateLimit": map[string]interface{}{
+				"window": float64(300),
+				"count":  float64(2000),
+			},
 		}, r)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{
@@ -186,7 +190,10 @@ func TestProjectKeyService_Update(t *testing.T) {
 			"name": "Fabulous Key",
 			"projectId": 2,
 			"public": "cfc7b0341c6e4f6ea1a9d256a30dba00",
-			"rateLimit": null,
+			"rateLimit": {
+				"window": 300,
+				"count": 2000
+			},
 			"secret": "a07dcd97aa56481f82aeabaed43ca448"
 		}`)
 	})
@@ -194,6 +201,10 @@ func TestProjectKeyService_Update(t *testing.T) {
 	client := NewClient(httpClient, nil, "")
 	params := &UpdateProjectKeyParams{
 		Name: "Fabulous Key",
+		RateLimit: &ProjectKeyRateLimit{
+			Window: 300,
+			Count:  2000,
+		},
 	}
 	projectKey, _, err := client.ProjectKeys.Update("the-interstellar-jurisdiction", "pump-station", "befdbf32724c4ae0a3d286717b1f8127", params)
 	assert.NoError(t, err)
@@ -214,6 +225,10 @@ func TestProjectKeyService_Update(t *testing.T) {
 			CDN:      "https://sentry.io/js-sdk-loader/cfc7b0341c6e4f6ea1a9d256a30dba00.min.js",
 		},
 		DateCreated: mustParseTime("2018-09-20T15:48:07.397Z"),
+		RateLimit: &ProjectKeyRateLimit{
+			Window: 300,
+			Count:  2000,
+		},
 	}
 	assert.Equal(t, expected, projectKey)
 }
