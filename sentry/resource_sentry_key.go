@@ -80,8 +80,9 @@ func resourceSentryKey() *schema.Resource {
 }
 
 func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	if d.Get("key_id").(string) != "" {
-		d.SetId(d.Get("key_id").(string))
+	inputKeyId := d.Get("key_id").(string)
+	if inputKeyId != "" {
+		d.SetId(inputKeyId)
 		return resourceSentryKeyUpdate(d, meta)
 	}
 	client := meta.(*sentryclient.Client)
