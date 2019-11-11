@@ -143,16 +143,6 @@ func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func getKeyRateLimit(count int, window int) *sentryclient.ProjectKeyRateLimit {
-	if count == 0 || window == 0 {
-		return nil
-	}
-	return &sentryclient.ProjectKeyRateLimit{
-		Window: window,
-		Count:  count,
-	}
-}
-
 func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*sentryclient.Client)
 
@@ -163,9 +153,13 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 		Name: d.Get("name").(string),
 	}
 
-	rateLimit := getKeyRateLimit(d.Get("rate_limit_count").(int), d.Get("rate_limit_window").(int))
-	if rateLimit != nil {
-		params.RateLimit = rateLimit
+	rlc := d.Get("rate_limit_count").(int)
+	rlw := d.Get("rate_limit_window").(int)
+	if rlc+rlw > 0 {
+		params.RateLimit = &sentryclient.ProjectKeyRateLimit{
+			Window: rlw,
+			Count:  rlc,
+		}
 	}
 
 	key, _, err := client.ProjectKeys.Update(org, project, id, params)
