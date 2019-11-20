@@ -11,7 +11,7 @@ import (
 // provider.
 type Config struct {
 	Token   string
-	BaseURL string
+	BaseURL  string
 }
 
 func (c *Config) Client() (interface{}, error) {
