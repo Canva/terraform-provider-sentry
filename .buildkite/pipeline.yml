@@ -3,9 +3,9 @@ env:
 steps:
   - label: ":golang: ci"
     command:
-        - "go get -v -t -d ./..."
-        - "go build"
-        - "go test ./..."
+      - "go get -v -t -d ./..."
+      - "go build"
+      - "go test ./..."
     plugins:
       docker#v1.4.0:
         image: "canvadev/ci-docker-node-yarn-chrome-xvfb:2018-09-07"
