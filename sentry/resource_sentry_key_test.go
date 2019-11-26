@@ -42,6 +42,25 @@ func TestAccSentryKey_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_csp"),
 				),
 			},
+			{
+				Config: testAccSentryRateLimitUpdateConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSentryKeyExists("sentry_key.test_key", &key),
+					// This only work if the account has enterprise plan enabled
+					testAccCheckSentryKeyAttributes(&key, &testAccSentryKeyExpectedAttributes{
+						RateLimit: &sentryclient.ProjectKeyRateLimit{
+							Count:  2000,
+							Window: 300,
+						},
+					}),
+					resource.TestCheckResourceAttr("sentry_key.test_key", "name", "Test key changed"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_secret"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_public"),
+					resource.TestCheckResourceAttrSet("sentry_key.test_key", "dsn_csp"),
+				),
+			},
 		},
 	})
 }
@@ -103,6 +122,35 @@ func testAccCheckSentryKeyExists(n string, projectKey *sentryclient.ProjectKey) 
 	}
 }
 
+type testAccSentryKeyExpectedAttributes struct {
+	RateLimit *sentryclient.ProjectKeyRateLimit
+}
+
+func checkRateLimit(get *sentryclient.ProjectKeyRateLimit, want *sentryclient.ProjectKeyRateLimit) error {
+	if get == nil && want == nil {
+		return nil
+	}
+	if get == nil && want != nil {
+		return errors.New("got nil rate limit but want non-nil")
+	}
+	if get != nil && want == nil {
+		return errors.New("got non-nil rate limit but want nil")
+	}
+	if get.Window != want.Window {
+		return fmt.Errorf("got RateLimit.window %v; want %v", get.Window, want.Window)
+	}
+	if get.Count != want.Count {
+		return fmt.Errorf("got RateLimit.window %v; want %v", get.Count, want.Count)
+	}
+	return nil
+}
+
+func testAccCheckSentryKeyAttributes(key *sentryclient.ProjectKey, want *testAccSentryKeyExpectedAttributes) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		return checkRateLimit(key.RateLimit, want.RateLimit)
+	}
+}
+
 var testAccSentryKeyConfig = fmt.Sprintf(`
 	resource "sentry_team" "test_team" {
 		organization = "%s"
@@ -138,5 +186,27 @@ var testAccSentryKeyUpdateConfig = fmt.Sprintf(`
 		organization = "%s"
 		project = "${sentry_project.test_project.id}"
 		name = "Test key changed"
+	}
+`, testOrganization, testOrganization, testOrganization)
+
+var testAccSentryRateLimitUpdateConfig = fmt.Sprintf(`
+	resource "sentry_team" "test_team" {
+		organization = "%s"
+		name = "Test team"
+	}
+
+	resource "sentry_project" "test_project" {
+		organization = "%s"
+		team = "${sentry_team.test_team.id}"
+		name = "Test project"
+	}
+
+	resource "sentry_key" "test_key" {
+		organization = "%s"
+		project = "${sentry_project.test_project.id}"
+		name = "Test key changed"
+
+		rate_limit_window = 300
+		rate_limit_count = 2000
 	}
 `, testOrganization, testOrganization, testOrganization)

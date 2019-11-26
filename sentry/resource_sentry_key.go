@@ -50,12 +50,16 @@ func resourceSentryKey() *schema.Resource {
 				Computed: true,
 			},
 			"rate_limit_window": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "time window in second for rate_limit_count",
+				Optional:    true,
 			},
 			"rate_limit_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "rate limit for the key in rate_limit_window time",
+				Optional:    true,
 			},
 			"dsn_secret": {
 				Type:     schema.TypeString,
@@ -147,6 +151,15 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	params := &sentryclient.UpdateProjectKeyParams{
 		Name: d.Get("name").(string),
+	}
+
+	rlc := d.Get("rate_limit_count").(int)
+	rlw := d.Get("rate_limit_window").(int)
+	if rlc+rlw > 0 {
+		params.RateLimit = &sentryclient.ProjectKeyRateLimit{
+			Window: rlw,
+			Count:  rlc,
+		}
 	}
 
 	key, _, err := client.ProjectKeys.Update(org, project, id, params)

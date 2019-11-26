@@ -76,7 +76,8 @@ func (s *ProjectKeyService) Create(organizationSlug string, projectSlug string, 
 
 // UpdateProjectKeyParams are the parameters for ProjectKeyService.Update.
 type UpdateProjectKeyParams struct {
-	Name string `json:"name,omitempty"`
+	Name      string               `json:"name,omitempty"`
+	RateLimit *ProjectKeyRateLimit `json:"rateLimit,omitempty"`
 }
 
 // Update a client key.
