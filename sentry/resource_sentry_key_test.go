@@ -147,12 +147,7 @@ func checkRateLimit(get *sentryclient.ProjectKeyRateLimit, want *sentryclient.Pr
 
 func testAccCheckSentryKeyAttributes(key *sentryclient.ProjectKey, want *testAccSentryKeyExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rateLimitResult := checkRateLimit(key.RateLimit, want.RateLimit)
-		if rateLimitResult != nil {
-			return rateLimitResult
-		}
-
-		return nil
+		return checkRateLimit(key.RateLimit, want.RateLimit)
 	}
 }
 
