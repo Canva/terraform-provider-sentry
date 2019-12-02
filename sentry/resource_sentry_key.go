@@ -158,6 +158,11 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 			Window: rlw,
 			Count:  rlc,
 		}
+	} else {
+		params.RateLimit = &sentryclient.ProjectKeyRateLimit{
+			Window: 0,
+			Count:  0,
+		}
 	}
 
 	key, _, err := client.ProjectKeys.Update(org, project, id, params)
