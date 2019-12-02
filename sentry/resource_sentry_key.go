@@ -51,13 +51,11 @@ func resourceSentryKey() *schema.Resource {
 			},
 			"rate_limit_window": {
 				Type:        schema.TypeInt,
-				Computed:    true,
 				Description: "time window in second for rate_limit_count",
 				Optional:    true,
 			},
 			"rate_limit_count": {
 				Type:        schema.TypeInt,
-				Computed:    true,
 				Description: "rate limit for the key in rate_limit_window time",
 				Optional:    true,
 			},
