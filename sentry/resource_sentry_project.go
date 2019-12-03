@@ -30,6 +30,12 @@ func resourceSentryProject() *schema.Resource {
 				Required:    true,
 				Description: "The slug of the team to create the project for",
 			},
+			"remove_default_key": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Whether to remove the default key",
+				Default:     false,
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -104,7 +110,15 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	if d.Get("remove_default_key").(bool) {
+		err = removeDefaultKey(meta, org, proj.Slug)
+		if err != nil {
+			return err
+		}
+	}
+
 	d.SetId(proj.Slug)
+
 	return resourceSentryProjectRead(d, meta)
 }
 
@@ -196,4 +210,23 @@ func resourceSentryProjectImporter(d *schema.ResourceData, meta interface{}) ([]
 	d.SetId(parts[1])
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func removeDefaultKey(meta interface{}, org, projSlug string) error {
+	client := meta.(*sentryclient.Client)
+
+	keys, _, err := client.ProjectKeys.List(org, projSlug)
+	if err != nil {
+		return err
+	}
+	var defaultKeyId string
+	for _, key := range keys {
+		if key.Name == "Default" {
+			defaultKeyId = key.ID
+			break
+		}
+	}
+
+	client.ProjectKeys.Delete(org, projSlug, defaultKeyId)
+	return nil
 }
