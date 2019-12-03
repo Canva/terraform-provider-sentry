@@ -64,6 +64,10 @@ func TestAccSentryProject_basic(t *testing.T) {
 					}),
 				),
 			},
+			{
+				Config: testAccSentryProjectRemoveKeyConfig,
+				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove"),
+			},
 		},
 	})
 }
@@ -110,6 +114,21 @@ func testAccCheckSentryProjectExists(n string, proj *sentryclient.Project) resou
 			return err
 		}
 		*proj = *sentryProj
+		return nil
+	}
+}
+
+func testAccCheckSentryKeyRemoved(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[n]
+		client := testAccProvider.Meta().(*sentryclient.Client)
+		keys, _, err := client.ProjectKeys.List(rs.Primary.Attributes["organization"], rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+		if len(keys) != 0 {
+			return fmt.Errorf("Default key not removed")
+		}
 		return nil
 	}
 }
@@ -172,5 +191,19 @@ var testAccSentryProjectConfig = fmt.Sprintf(`
     organization = "%s"
     team = "${sentry_team.test_team.id}"
     name = "Test project"
+  }
+`, testOrganization, testOrganization)
+
+var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
+  resource "sentry_team" "test_team" {
+    organization = "%s"
+    name = "Test team"
+  }
+
+  resource "sentry_project" "test_project_remove" {
+    organization = "%s"
+    team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	remove_default_key = true
   }
 `, testOrganization, testOrganization)
