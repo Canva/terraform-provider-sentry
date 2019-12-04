@@ -121,7 +121,7 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if d.Get("remove_default_key").(bool) {
-		err = removeDefaultKey(meta, org, proj.Slug)
+		err = removeDefaultKey(client, org, proj.Slug)
 		if err != nil {
 			return err
 		}
@@ -231,9 +231,7 @@ func resourceSentryProjectImporter(d *schema.ResourceData, meta interface{}) ([]
 	return []*schema.ResourceData{d}, nil
 }
 
-func removeDefaultKey(meta interface{}, org, projSlug string) error {
-	client := meta.(*sentryclient.Client)
-
+func removeDefaultKey(client *sentryclient.Client, org, projSlug string) error {
 	keys, _, err := client.ProjectKeys.List(org, projSlug)
 	if err != nil {
 		return err
