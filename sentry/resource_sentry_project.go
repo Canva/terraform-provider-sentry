@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceSentryProject() *schema.Resource {
@@ -29,6 +29,12 @@ func resourceSentryProject() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The slug of the team to create the project for",
+			},
+			"remove_default_key": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Whether to remove the default key",
+				Default:     false,
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -83,6 +89,15 @@ func resourceSentryProject() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
+			"allowed_domains": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The domains allowd to be collected",
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 
 			// TODO: Project options
 		},
@@ -90,13 +105,14 @@ func resourceSentryProject() *schema.Resource {
 }
 
 func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
 	team := d.Get("team").(string)
-	params := &sentry.CreateProjectParams{
-		Name: d.Get("name").(string),
-		Slug: d.Get("slug").(string),
+	params := &sentryclient.CreateProjectParams{
+		Name:     d.Get("name").(string),
+		Slug:     d.Get("slug").(string),
+		Platform: d.Get("platform").(string),
 	}
 
 	proj, _, err := client.Projects.Create(org, team, params)
@@ -104,12 +120,20 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	if d.Get("remove_default_key").(bool) {
+		err = removeDefaultKey(client, org, proj.Slug)
+		if err != nil {
+			return err
+		}
+	}
+
 	d.SetId(proj.Slug)
+
 	return resourceSentryProjectRead(d, meta)
 }
 
 func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
@@ -133,6 +157,7 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("status", proj.Status)
 	d.Set("digests_min_delay", proj.DigestsMinDelay)
 	d.Set("digests_max_delay", proj.DigestsMaxDelay)
+	d.Set("allowed_domains", proj.AllowedDomains)
 
 	// TODO: Project options
 
@@ -140,11 +165,11 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
-	params := &sentry.UpdateProjectParams{
+	params := &sentryclient.UpdateProjectParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
@@ -162,6 +187,14 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 		params.DigestsMaxDelay = Int(v.(int))
 	}
 
+	allowed_domains := []string{}
+	for _, url := range d.Get("allowed_domains").([]interface{}) {
+		allowed_domains = append(allowed_domains, url.(string))
+	}
+	if len(allowed_domains) > 0 {
+		params.AllowedDomains = allowed_domains
+	}
+
 	proj, _, err := client.Projects.Update(org, slug, params)
 	if err != nil {
 		return err
@@ -172,7 +205,7 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceSentryProjectDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	slug := d.Id()
 	org := d.Get("organization").(string)
@@ -196,4 +229,21 @@ func resourceSentryProjectImporter(d *schema.ResourceData, meta interface{}) ([]
 	d.SetId(parts[1])
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func removeDefaultKey(client *sentryclient.Client, org, projSlug string) error {
+	keys, _, err := client.ProjectKeys.List(org, projSlug)
+	if err != nil {
+		return err
+	}
+	var defaultKeyId string
+	for _, key := range keys {
+		if key.Name == "Default" {
+			defaultKeyId = key.ID
+			break
+		}
+	}
+
+	client.ProjectKeys.Delete(org, projSlug, defaultKeyId)
+	return nil
 }

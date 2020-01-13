@@ -3,8 +3,8 @@ package sentry
 import (
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceSentryPlugin() *schema.Resource {
@@ -43,7 +43,7 @@ func resourceSentryPlugin() *schema.Resource {
 }
 
 func resourceSentryPluginCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	plugin := d.Get("plugin").(string)
 	org := d.Get("organization").(string)
@@ -66,7 +66,7 @@ func resourceSentryPluginCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSentryPluginRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
@@ -98,7 +98,7 @@ func resourceSentryPluginRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryPluginUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
@@ -113,7 +113,7 @@ func resourceSentryPluginUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSentryPluginDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)

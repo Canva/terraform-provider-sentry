@@ -3,16 +3,17 @@ package sentry
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform/helper/acctest"
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
 )
 
 func TestAccSentryProject_basic(t *testing.T) {
-	var project sentry.Project
+	var project sentryclient.Project
 
 	random := acctest.RandInt()
 	newProjectSlug := fmt.Sprintf("test-project-%d", random)
@@ -27,7 +28,8 @@ func TestAccSentryProject_basic(t *testing.T) {
 	    organization = "%s"
 	    team = "${sentry_team.test_team.id}"
 	    name = "Test project changed"
-	    slug = "%s"
+		slug = "%s"
+		allowed_domains = ["www.canva.com", "www.canva.cn"]
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -41,10 +43,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:         "Test project",
-						Organization: testOrganization,
-						Team:         "Test team",
-						SlugPresent:  true,
+						Name:           "Test project",
+						Organization:   testOrganization,
+						Team:           "Test team",
+						SlugPresent:    true,
+						AllowedDomains: []string{"*"},
 					}),
 				),
 			},
@@ -53,19 +56,24 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:         "Test project changed",
-						Organization: testOrganization,
-						Team:         "Test team",
-						Slug:         newProjectSlug,
+						Name:           "Test project changed",
+						Organization:   testOrganization,
+						Team:           "Test team",
+						Slug:           newProjectSlug,
+						AllowedDomains: []string{"www.canva.com", "www.canva.cn"},
 					}),
 				),
+			},
+			{
+				Config: testAccSentryProjectRemoveKeyConfig,
+				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove"),
 			},
 		},
 	})
 }
 
 func testAccCheckSentryProjectDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
+	client := testAccProvider.Meta().(*sentryclient.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_project" {
@@ -86,7 +94,7 @@ func testAccCheckSentryProjectDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckSentryProjectExists(n string, proj *sentry.Project) resource.TestCheckFunc {
+func testAccCheckSentryProjectExists(n string, proj *sentryclient.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -97,7 +105,7 @@ func testAccCheckSentryProjectExists(n string, proj *sentry.Project) resource.Te
 			return errors.New("No project ID is set")
 		}
 
-		client := testAccProvider.Meta().(*sentry.Client)
+		client := testAccProvider.Meta().(*sentryclient.Client)
 		sentryProj, _, err := client.Projects.Get(
 			rs.Primary.Attributes["organization"],
 			rs.Primary.ID,
@@ -110,16 +118,32 @@ func testAccCheckSentryProjectExists(n string, proj *sentry.Project) resource.Te
 	}
 }
 
+func testAccCheckSentryKeyRemoved(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[n]
+		client := testAccProvider.Meta().(*sentryclient.Client)
+		keys, _, err := client.ProjectKeys.List(rs.Primary.Attributes["organization"], rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+		if len(keys) != 0 {
+			return fmt.Errorf("Default key not removed")
+		}
+		return nil
+	}
+}
+
 type testAccSentryProjectExpectedAttributes struct {
 	Name         string
 	Organization string
 	Team         string
 
-	SlugPresent bool
-	Slug        string
+	SlugPresent    bool
+	Slug           string
+	AllowedDomains []string
 }
 
-func testAccCheckSentryProjectAttributes(proj *sentry.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if proj.Name != want.Name {
 			return fmt.Errorf("got proj %q; want %q", proj.Name, want.Name)
@@ -141,6 +165,18 @@ func testAccCheckSentryProjectAttributes(proj *sentry.Project, want *testAccSent
 			return fmt.Errorf("got slug %q; want %q", proj.Slug, want.Slug)
 		}
 
+		if len(want.AllowedDomains) == len(proj.AllowedDomains) {
+			sort.Strings(want.AllowedDomains)
+			sort.Strings(proj.AllowedDomains)
+			for index, _ := range want.AllowedDomains {
+				if want.AllowedDomains[index] != proj.AllowedDomains[index] {
+					return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
+				}
+			}
+		} else {
+			return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
+		}
+
 		return nil
 	}
 }
@@ -155,5 +191,19 @@ var testAccSentryProjectConfig = fmt.Sprintf(`
     organization = "%s"
     team = "${sentry_team.test_team.id}"
     name = "Test project"
+  }
+`, testOrganization, testOrganization)
+
+var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
+  resource "sentry_team" "test_team" {
+    organization = "%s"
+    name = "Test team"
+  }
+
+  resource "sentry_project" "test_project_remove" {
+    organization = "%s"
+    team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	remove_default_key = true
   }
 `, testOrganization, testOrganization)
