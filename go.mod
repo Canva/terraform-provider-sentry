@@ -1,4 +1,4 @@
-module github.com/jianyuan/terraform-provider-sentry
+module github.com/canva/terraform-provider-sentry
 
 require (
 	cloud.google.com/go v0.50.0 // indirect
