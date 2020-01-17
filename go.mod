@@ -10,10 +10,8 @@ require (
 	github.com/hashicorp/go-hclog v0.10.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/terraform v0.12.19
-	github.com/hashicorp/terraform-plugin-sdk v1.4.1
 	github.com/hashicorp/terraform-svchost v0.0.0-20191119180714-d2e4933b9136 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
-	github.com/jianyuan/go-sentry v1.2.1-0.20191201111848-212d47039109
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/mattn/go-isatty v0.0.11 // indirect
 	github.com/mitchellh/mapstructure v1.1.2

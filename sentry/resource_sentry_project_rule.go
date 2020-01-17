@@ -3,8 +3,8 @@ package sentry
 import (
 	"errors"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -75,7 +75,7 @@ func resourceSentryRule() *schema.Resource {
 }
 
 func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	name := d.Get("name").(string)
 	org := d.Get("organization").(string)
@@ -93,20 +93,20 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 		frequency = defaultFrequency
 	}
 
-	conditions := make([]*sentry.CreateRuleConditionParams, len(inputConditions))
+	conditions := make([]*sentryclient.CreateRuleConditionParams, len(inputConditions))
 	for i, ic := range inputConditions {
-		var condition sentry.CreateRuleConditionParams
+		var condition sentryclient.CreateRuleConditionParams
 		mapstructure.Decode(ic, &condition)
 		conditions[i] = &condition
 	}
-	actions := make([]*sentry.CreateRuleActionParams, len(inputActions))
+	actions := make([]*sentryclient.CreateRuleActionParams, len(inputActions))
 	for i, ia := range inputActions {
-		var action sentry.CreateRuleActionParams
+		var action sentryclient.CreateRuleActionParams
 		mapstructure.Decode(ia, &action)
 		actions[i] = &action
 	}
 
-	params := &sentry.CreateRuleParams{
+	params := &sentryclient.CreateRuleParams{
 		ActionMatch: actionMatch,
 		Environment: environment,
 		Frequency:   frequency,
@@ -130,7 +130,7 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
 	id := d.Id()
@@ -141,7 +141,7 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
-	var rule *sentry.Rule
+	var rule *sentryclient.Rule
 	for _, r := range rules {
 		if r.ID == id {
 			rule = &r
@@ -164,7 +164,7 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	name := d.Get("name").(string)
@@ -183,20 +183,20 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		frequency = defaultFrequency
 	}
 
-	conditions := make([]sentry.RuleCondition, len(inputConditions))
+	conditions := make([]sentryclient.RuleCondition, len(inputConditions))
 	for i, ic := range inputConditions {
-		var condition sentry.RuleCondition
+		var condition sentryclient.RuleCondition
 		mapstructure.Decode(ic, &condition)
 		conditions[i] = condition
 	}
-	actions := make([]sentry.RuleAction, len(inputActions))
+	actions := make([]sentryclient.RuleAction, len(inputActions))
 	for i, ia := range inputActions {
-		var action sentry.RuleAction
+		var action sentryclient.RuleAction
 		mapstructure.Decode(ia, &action)
 		actions[i] = action
 	}
 
-	params := &sentry.Rule{
+	params := &sentryclient.Rule{
 		ID:          id,
 		ActionMatch: actionMatch,
 		Environment: environment,
@@ -219,7 +219,7 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryRuleDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
