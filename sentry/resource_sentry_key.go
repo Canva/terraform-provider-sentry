@@ -3,8 +3,8 @@ package sentry
 import (
 	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/jianyuan/go-sentry/sentry"
+	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceSentryKey() *schema.Resource {
@@ -50,14 +50,16 @@ func resourceSentryKey() *schema.Resource {
 				Computed: true,
 			},
 			"rate_limit_window": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Description: "time window in second for rate_limit_count",
+				Optional:    true,
+				Computed:    true,
 			},
 			"rate_limit_count": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Description: "rate limit for the key in rate_limit_window time",
+				Optional:    true,
+				Computed:    true,
 			},
 			"dsn_secret": {
 				Type:     schema.TypeString,
@@ -76,13 +78,13 @@ func resourceSentryKey() *schema.Resource {
 }
 
 func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
-	params := &sentry.CreateProjectKeyParams{
+	params := &sentryclient.CreateProjectKeyParams{
 		Name: d.Get("name").(string),
-		RateLimit: &sentry.ProjectKeyRateLimit{
+		RateLimit: &sentryclient.ProjectKeyRateLimit{
 			Window: d.Get("rate_limit_window").(int),
 			Count:  d.Get("rate_limit_count").(int),
 		},
@@ -99,7 +101,7 @@ func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
@@ -147,14 +149,14 @@ func resourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
-	params := &sentry.UpdateProjectKeyParams{
+	params := &sentryclient.UpdateProjectKeyParams{
 		Name: d.Get("name").(string),
-		RateLimit: &sentry.ProjectKeyRateLimit{
+		RateLimit: &sentryclient.ProjectKeyRateLimit{
 			Window: d.Get("rate_limit_window").(int),
 			Count:  d.Get("rate_limit_count").(int),
 		},
@@ -170,7 +172,7 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSentryKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentry.Client)
+	client := meta.(*sentryclient.Client)
 
 	id := d.Id()
 	org := d.Get("organization").(string)
