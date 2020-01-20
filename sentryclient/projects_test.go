@@ -434,8 +434,7 @@ func TestProjectService_Create(t *testing.T) {
 	mux.HandleFunc("/api/0/teams/the-interstellar-jurisdiction/powerful-abolitionist/projects/", func(w http.ResponseWriter, r *http.Request) {
 		assertMethod(t, "POST", r)
 		assertPostJSON(t, map[string]interface{}{
-			"name":     "The Spoiled Yoghurt",
-			"platform": "javascript-react",
+			"name": "The Spoiled Yoghurt",
 		}, r)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{
@@ -449,7 +448,6 @@ func TestProjectService_Create(t *testing.T) {
 			"color": "#bf6e3f",
 			"isPublic": false,
 			"dateCreated": "2017-07-18T19:29:44.996Z",
-			"platform": "javascript-react",
 			"platforms": [],
 			"callSign": "THE-SPOILED-YOGHURT",
 			"firstEvent": null,
@@ -463,8 +461,7 @@ func TestProjectService_Create(t *testing.T) {
 
 	client := NewClient(httpClient, nil, "")
 	params := &CreateProjectParams{
-		Name:     "The Spoiled Yoghurt",
-		Platform: "javascript-react",
+		Name: "The Spoiled Yoghurt",
 	}
 	project, _, err := client.Projects.Create("the-interstellar-jurisdiction", "powerful-abolitionist", params)
 	assert.NoError(t, err)
@@ -474,7 +471,6 @@ func TestProjectService_Create(t *testing.T) {
 		Slug:         "the-spoiled-yoghurt",
 		Name:         "The Spoiled Yoghurt",
 		DateCreated:  mustParseTime("2017-07-18T19:29:44.996Z"),
-		Platform:     "javascript-react",
 		IsPublic:     false,
 		IsBookmarked: false,
 		Color:        "#bf6e3f",
@@ -499,11 +495,9 @@ func TestProjectService_Update(t *testing.T) {
 			"options": map[string]interface{}{
 				"sentry:origins": "http://example.com\nhttp://example.invalid",
 			},
-			"allowedDomains": []interface{}{"www.canva.com", "www.canva.cn"},
 		}, r)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{
-			"allowedDomains": ["www.canva.com", "www.canva.cn"],
 			"status": "active",
 			"digestsMinDelay": 300,
 			"options": {
@@ -536,9 +530,8 @@ func TestProjectService_Update(t *testing.T) {
 
 	client := NewClient(httpClient, nil, "")
 	params := &UpdateProjectParams{
-		AllowedDomains: []string{"www.canva.com", "www.canva.cn"},
-		Name:           "Plane Proxy",
-		Slug:           "plane-proxy",
+		Name: "Plane Proxy",
+		Slug: "plane-proxy",
 		Options: map[string]interface{}{
 			"sentry:origins": "http://example.com\nhttp://example.invalid",
 		},
@@ -546,14 +539,13 @@ func TestProjectService_Update(t *testing.T) {
 	project, _, err := client.Projects.Update("the-interstellar-jurisdiction", "plain-proxy", params)
 	assert.NoError(t, err)
 	expected := &Project{
-		AllowedDomains: []string{"www.canva.com", "www.canva.cn"},
-		ID:             "5",
-		Slug:           "plane-proxy",
-		Name:           "Plane Proxy",
-		DateCreated:    mustParseTime("2017-07-18T19:30:09.751Z"),
-		IsPublic:       false,
-		IsBookmarked:   false,
-		Color:          "#bf803f",
+		ID:           "5",
+		Slug:         "plane-proxy",
+		Name:         "Plane Proxy",
+		DateCreated:  mustParseTime("2017-07-18T19:30:09.751Z"),
+		IsPublic:     false,
+		IsBookmarked: false,
+		Color:        "#bf803f",
 		Features: []string{
 			"data-forwarding",
 			"rate-limits",
