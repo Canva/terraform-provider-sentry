@@ -1,4 +1,4 @@
-package sentry
+package sentryclient
 
 // Bool returns a pointer to the bool value.
 func Bool(v bool) *bool {

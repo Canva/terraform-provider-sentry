@@ -1,4 +1,4 @@
-package sentry
+package sentryclient
 
 import (
 	"encoding/json"
