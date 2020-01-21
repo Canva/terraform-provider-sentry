@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/mitchellh/mapstructure"
 )
 
