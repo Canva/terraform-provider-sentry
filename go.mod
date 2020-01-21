@@ -7,9 +7,11 @@ require (
 	github.com/dghubble/sling v1.3.0
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
+	github.com/hashicorp/go-getter v1.4.2-0.20200106182914-9813cbd4eb02 // indirect
 	github.com/hashicorp/go-hclog v0.10.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/terraform v0.12.19
+	github.com/hashicorp/hcl/v2 v2.2.0 // indirect
+	github.com/hashicorp/terraform-plugin-sdk v1.5.0
 	github.com/hashicorp/terraform-svchost v0.0.0-20191119180714-d2e4933b9136 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect

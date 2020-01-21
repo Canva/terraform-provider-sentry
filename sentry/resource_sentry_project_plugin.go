@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceSentryPlugin() *schema.Resource {
