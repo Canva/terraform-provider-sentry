@@ -79,7 +79,10 @@ type CreateRuleActionParams struct {
 
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
 type CreateRuleConditionParams struct {
-	ID string `json:"id"`
+	ID        string `json:"id"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     string `json:"value,omitempty"`
 }
 
 // Create a new alert rule bound to a project.
