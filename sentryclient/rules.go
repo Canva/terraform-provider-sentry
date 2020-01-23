@@ -78,6 +78,8 @@ type CreateRuleActionParams struct {
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
+	Action    string `json:"action,omitempty"`
+	Service   string `json:"service,omitempty"`
 }
 
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
@@ -86,6 +88,8 @@ type CreateRuleConditionParams struct {
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
 	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // Create a new alert rule bound to a project.
