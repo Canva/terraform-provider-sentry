@@ -23,8 +23,8 @@ type Rule struct {
 // RuleCondition represents the conditions for each rule.
 // https://github.com/getsentry/sentry/blob/9.0.0/src/sentry/api/serializers/models/rule.py
 type RuleCondition struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
@@ -75,11 +75,18 @@ type CreateRuleActionParams struct {
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
+	Action    string `json:"action,omitempty"`
+	Service   string `json:"service,omitempty"`
 }
 
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
 type CreateRuleConditionParams struct {
-	ID string `json:"id"`
+	ID        string `json:"id"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // Create a new alert rule bound to a project.
