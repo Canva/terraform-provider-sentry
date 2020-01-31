@@ -66,11 +66,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 			},
 			{
 				Config: testAccSentryProjectRemoveKeyConfig,
-				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove"),
+				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove_key"),
 			},
 			{
 				Config: testAccSentryProjectRemoveRuleConfig,
-				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove_rule"),
+				Check:  testAccCheckSentryRuleRemoved("sentry_project.test_project_remove_rule"),
 			},			
 		},
 	})
@@ -219,7 +219,7 @@ var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
     name = "Test team"
   }
 
-  resource "sentry_project" "test_project_remove" {
+  resource "sentry_project" "test_project_remove_key" {
     organization = "%s"
     team = "${sentry_team.test_team.id}"
 	name = "Test project"
