@@ -68,6 +68,10 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Config: testAccSentryProjectRemoveKeyConfig,
 				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove"),
 			},
+			{
+				Config: testAccSentryProjectRemoveRuleConfig,
+				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove_rule"),
+			},			
 		},
 	})
 }
@@ -132,6 +136,22 @@ func testAccCheckSentryKeyRemoved(n string) resource.TestCheckFunc {
 		return nil
 	}
 }
+
+func testAccCheckSentryRuleRemoved(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[n]
+		client := testAccProvider.Meta().(*sentryclient.Client)
+		keys, _, err := client.Rules.List(rs.Primary.Attributes["organization"], rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+		if len(keys) != 0 {
+			return fmt.Errorf("Default key not removed")
+		}
+		return nil
+	}
+}
+
 
 type testAccSentryProjectExpectedAttributes struct {
 	Name         string
@@ -207,3 +227,18 @@ var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
 	remove_default_key = true
   }
 `, testOrganization, testOrganization)
+
+var testAccSentryProjectRemoveRuleConfig = fmt.Sprintf(`
+  resource "sentry_team" "test_team" {
+    organization = "%s"
+    name = "Test team"
+  }
+
+  resource "sentry_project" "test_project_remove_rule" {
+    organization = "%s"
+    team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	remove_default_rule = true
+  }
+`, testOrganization, testOrganization)
+

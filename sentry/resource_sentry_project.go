@@ -36,6 +36,12 @@ func resourceSentryProject() *schema.Resource {
 				Description: "Whether to remove the default key",
 				Default:     false,
 			},
+			"remove_default_rule": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Whether to remove the default rule",
+				Default:     false,
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -245,5 +251,22 @@ func removeDefaultKey(client *sentryclient.Client, org, projSlug string) error {
 	}
 
 	client.ProjectKeys.Delete(org, projSlug, defaultKeyId)
+	return nil
+}
+
+func removeDefaultRule(client *sentryclient.Client, org, projSlug string) error {
+	rules, _, err := client.Rules.List(org, projSlug)
+	if err != nil {
+		return err
+	}
+	var defaultRuleId string
+	for _, rule := range rules {
+		if rule.Name == "Send a notification for new issues" {
+			defaultRuleId = rule.ID
+			break
+		}
+	}
+
+	client.Rules.Delete(org, projSlug, defaultRuleId)
 	return nil
 }
