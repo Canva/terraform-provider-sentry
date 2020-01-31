@@ -133,6 +133,13 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.Get("remove_default_rule").(bool) {
+		err = removeDefaultRule(client, org, proj.Slug)
+		if err != nil {
+			return err
+		}
+	}
+
 	d.SetId(proj.Slug)
 
 	return resourceSentryProjectRead(d, meta)
