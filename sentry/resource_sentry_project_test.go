@@ -152,7 +152,6 @@ func testAccCheckSentryRuleRemoved(n string) resource.TestCheckFunc {
 	}
 }
 
-
 type testAccSentryProjectExpectedAttributes struct {
 	Name         string
 	Organization string
