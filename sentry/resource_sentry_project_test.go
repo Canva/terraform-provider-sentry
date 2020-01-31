@@ -146,7 +146,7 @@ func testAccCheckSentryRuleRemoved(n string) resource.TestCheckFunc {
 			return err
 		}
 		if len(keys) != 0 {
-			return fmt.Errorf("Default key not removed")
+			return fmt.Errorf("Default rule not removed")
 		}
 		return nil
 	}
