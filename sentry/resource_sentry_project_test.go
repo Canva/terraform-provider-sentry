@@ -28,8 +28,9 @@ func TestAccSentryProject_basic(t *testing.T) {
 	    organization = "%s"
 	    team = "${sentry_team.test_team.id}"
 	    name = "Test project changed"
-		slug = "%s"
-		allowed_domains = ["www.canva.com", "www.canva.cn"]
+			slug = "%s"
+			allowed_domains = ["www.canva.com", "www.canva.cn"]
+			grouping_enhancements = "function:panic_handler      ^-group"
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -43,11 +44,12 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:           "Test project",
-						Organization:   testOrganization,
-						Team:           "Test team",
-						SlugPresent:    true,
-						AllowedDomains: []string{"*"},
+						Name:                 "Test project",
+						Organization:         testOrganization,
+						Team:                 "Test team",
+						SlugPresent:          true,
+						AllowedDomains:       []string{"*"},
+						GroupingEnhancements: "",
 					}),
 				),
 			},
@@ -56,11 +58,12 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:           "Test project changed",
-						Organization:   testOrganization,
-						Team:           "Test team",
-						Slug:           newProjectSlug,
-						AllowedDomains: []string{"www.canva.com", "www.canva.cn"},
+						Name:                 "Test project changed",
+						Organization:         testOrganization,
+						Team:                 "Test team",
+						Slug:                 newProjectSlug,
+						AllowedDomains:       []string{"www.canva.com", "www.canva.cn"},
+						GroupingEnhancements: "function:panic_handler      ^-group",
 					}),
 				),
 			},
@@ -71,7 +74,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 			{
 				Config: testAccSentryProjectRemoveRuleConfig,
 				Check:  testAccCheckSentryRuleRemoved("sentry_project.test_project_remove_rule"),
-			},			
+			},
 		},
 	})
 }
@@ -157,9 +160,10 @@ type testAccSentryProjectExpectedAttributes struct {
 	Organization string
 	Team         string
 
-	SlugPresent    bool
-	Slug           string
-	AllowedDomains []string
+	SlugPresent          bool
+	Slug                 string
+	GroupingEnhancements string
+	AllowedDomains       []string
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
@@ -184,10 +188,14 @@ func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testA
 			return fmt.Errorf("got slug %q; want %q", proj.Slug, want.Slug)
 		}
 
+		if want.GroupingEnhancements != "" && proj.GroupingEnhancements != want.GroupingEnhancements {
+			return fmt.Errorf("got GroupingEnhancements %q; want %q", proj.GroupingEnhancements, want.GroupingEnhancements)
+		}
+
 		if len(want.AllowedDomains) == len(proj.AllowedDomains) {
 			sort.Strings(want.AllowedDomains)
 			sort.Strings(proj.AllowedDomains)
-			for index, _ := range want.AllowedDomains {
+			for index := range want.AllowedDomains {
 				if want.AllowedDomains[index] != proj.AllowedDomains[index] {
 					return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
 				}
@@ -222,8 +230,8 @@ var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
   resource "sentry_project" "test_project_remove_key" {
     organization = "%s"
     team = "${sentry_team.test_team.id}"
-	name = "Test project"
-	remove_default_key = true
+    name = "Test project"
+    remove_default_key = true
   }
 `, testOrganization, testOrganization)
 
@@ -236,8 +244,7 @@ var testAccSentryProjectRemoveRuleConfig = fmt.Sprintf(`
   resource "sentry_project" "test_project_remove_rule" {
     organization = "%s"
     team = "${sentry_team.test_team.id}"
-	name = "Test project"
-	remove_default_rule = true
+    name = "Test project"
+    remove_default_rule = true
   }
 `, testOrganization, testOrganization)
-

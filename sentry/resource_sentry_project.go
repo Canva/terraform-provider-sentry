@@ -98,11 +98,17 @@ func resourceSentryProject() *schema.Resource {
 			"allowed_domains": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "The domains allowd to be collected",
+				Description: "The domains allowed to be collected",
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+			},
+			"grouping_enhancements": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Grouping enhancements pattern",
+				Computed:    true,
 			},
 
 			// TODO: Project options
@@ -171,6 +177,7 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("digests_min_delay", proj.DigestsMinDelay)
 	d.Set("digests_max_delay", proj.DigestsMaxDelay)
 	d.Set("allowed_domains", proj.AllowedDomains)
+	d.Set("grouping_enhancements", proj.GroupingEnhancements)
 
 	// TODO: Project options
 
@@ -200,12 +207,16 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 		params.DigestsMaxDelay = Int(v.(int))
 	}
 
-	allowed_domains := []string{}
+	allowedDomains := []string{}
 	for _, url := range d.Get("allowed_domains").([]interface{}) {
-		allowed_domains = append(allowed_domains, url.(string))
+		allowedDomains = append(allowedDomains, url.(string))
 	}
-	if len(allowed_domains) > 0 {
-		params.AllowedDomains = allowed_domains
+	if len(allowedDomains) > 0 {
+		params.AllowedDomains = allowedDomains
+	}
+
+	if v, ok := d.GetOk("grouping_enhancements"); ok {
+		params.GroupingEnhancements = v.(string)
 	}
 
 	proj, _, err := client.Projects.Update(org, slug, params)
@@ -249,15 +260,15 @@ func removeDefaultKey(client *sentryclient.Client, org, projSlug string) error {
 	if err != nil {
 		return err
 	}
-	var defaultKeyId string
+	var defaultKeyID string
 	for _, key := range keys {
 		if key.Name == "Default" {
-			defaultKeyId = key.ID
+			defaultKeyID = key.ID
 			break
 		}
 	}
 
-	client.ProjectKeys.Delete(org, projSlug, defaultKeyId)
+	client.ProjectKeys.Delete(org, projSlug, defaultKeyID)
 	return nil
 }
 
@@ -266,14 +277,14 @@ func removeDefaultRule(client *sentryclient.Client, org, projSlug string) error 
 	if err != nil {
 		return err
 	}
-	var defaultRuleId string
+	var defaultRuleID string
 	for _, rule := range rules {
 		if rule.Name == "Send a notification for new issues" {
-			defaultRuleId = rule.ID
+			defaultRuleID = rule.ID
 			break
 		}
 	}
 
-	client.Rules.Delete(org, projSlug, defaultRuleId)
+	client.Rules.Delete(org, projSlug, defaultRuleID)
 	return nil
 }
