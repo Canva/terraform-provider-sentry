@@ -132,7 +132,8 @@ func TestProjectService_List(t *testing.T) {
 				},
 				"platform": null,
 				"slug": "pump-station",
-				"status": "active"
+				"status": "active",
+				"groupingEnhancements": "pump station grouping enhancement rule"
 			}
 		]`)
 	})
@@ -210,7 +211,8 @@ func TestProjectService_List(t *testing.T) {
 			Avatar: Avatar{
 				Type: "letter_avatar",
 			},
-			Organization: expectedOrganization,
+			Organization:         expectedOrganization,
+			GroupingEnhancements: "pump station grouping enhancement rule",
 		},
 	}
 	assert.Equal(t, expected, projects)
@@ -355,7 +357,8 @@ func TestProjectService_Get(t *testing.T) {
 				"name": "Powerful Abolitionist",
 				"slug": "powerful-abolitionist"
 			}],
-			"verifySSL": false
+			"verifySSL": false,
+			"groupingEnhancements": "pump-station grouping enhancement rule"
 		}`)
 	})
 
@@ -398,6 +401,7 @@ func TestProjectService_Get(t *testing.T) {
 		SubjectTemplate:      "$shortID - $title",
 		SecurityToken:        "320e3180c64e11e8b61e0242ac110002",
 		ScrapeJavaScript:     true,
+		GroupingEnhancements: "pump-station grouping enhancement rule",
 		Organization: Organization{
 			ID:   "2",
 			Slug: "the-interstellar-jurisdiction",
@@ -524,8 +528,9 @@ func TestProjectService_Update(t *testing.T) {
 			"callSignReviewed": false,
 			"id": "5",
 			"subjectTemplate": "[$project] ${tag:level}: $title",
-			"name": "Plane Proxy"
-		}`)
+			"name": "Plane Proxy",
+			"groupingEnhancements": "Plane Proxy grouping enhancement rule"
+			}`)
 	})
 
 	client := NewClient(httpClient, nil, "")
@@ -556,9 +561,10 @@ func TestProjectService_Update(t *testing.T) {
 			"sentry:origins":     "http://example.com\nhttp://example.invalid",
 			"sentry:resolve_age": float64(0),
 		},
-		DigestsMinDelay: 300,
-		DigestsMaxDelay: 1800,
-		SubjectTemplate: "[$project] ${tag:level}: $title",
+		DigestsMinDelay:      300,
+		DigestsMaxDelay:      1800,
+		SubjectTemplate:      "[$project] ${tag:level}: $title",
+		GroupingEnhancements: "Plane Proxy grouping enhancement rule",
 	}
 	assert.Equal(t, expected, project)
 }

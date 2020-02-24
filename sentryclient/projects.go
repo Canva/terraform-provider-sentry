@@ -49,6 +49,7 @@ type Project struct {
 	VerifySSL            bool     `json:"verifySSL"`
 	ScrubIPAddresses     bool     `json:"scrubIPAddresses"`
 	ScrapeJavaScript     bool     `json:"scrapeJavaScript"`
+	GroupingEnhancements string   `json:"groupingEnhancements"`
 
 	Organization Organization `json:"organization"`
 	// TODO: plugins
@@ -137,14 +138,15 @@ func (s *ProjectService) Create(organizationSlug string, teamSlug string, params
 
 // UpdateProjectParams are the parameters for ProjectService.Update.
 type UpdateProjectParams struct {
-	Name            string                 `json:"name,omitempty"`
-	Slug            string                 `json:"slug,omitempty"`
-	Platform        string                 `json:"platform,omitempty"`
-	IsBookmarked    *bool                  `json:"isBookmarked,omitempty"`
-	DigestsMinDelay *int                   `json:"digestsMinDelay,omitempty"`
-	DigestsMaxDelay *int                   `json:"digestsMaxDelay,omitempty"`
-	Options         map[string]interface{} `json:"options,omitempty"`
-	AllowedDomains  []string               `json:"allowedDomains,omitempty"`
+	Name                 string                 `json:"name,omitempty"`
+	Slug                 string                 `json:"slug,omitempty"`
+	Platform             string                 `json:"platform,omitempty"`
+	IsBookmarked         *bool                  `json:"isBookmarked,omitempty"`
+	DigestsMinDelay      *int                   `json:"digestsMinDelay,omitempty"`
+	DigestsMaxDelay      *int                   `json:"digestsMaxDelay,omitempty"`
+	Options              map[string]interface{} `json:"options,omitempty"`
+	AllowedDomains       []string               `json:"allowedDomains,omitempty"`
+	GroupingEnhancements string                 `json:"groupingEnhancements,omitempty"`
 }
 
 // Update various attributes and configurable settings for a given project.
