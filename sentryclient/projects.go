@@ -138,15 +138,16 @@ func (s *ProjectService) Create(organizationSlug string, teamSlug string, params
 
 // UpdateProjectParams are the parameters for ProjectService.Update.
 type UpdateProjectParams struct {
-	Name                 string                 `json:"name,omitempty"`
-	Slug                 string                 `json:"slug,omitempty"`
-	Platform             string                 `json:"platform,omitempty"`
-	IsBookmarked         *bool                  `json:"isBookmarked,omitempty"`
-	DigestsMinDelay      *int                   `json:"digestsMinDelay,omitempty"`
-	DigestsMaxDelay      *int                   `json:"digestsMaxDelay,omitempty"`
-	Options              map[string]interface{} `json:"options,omitempty"`
-	AllowedDomains       []string               `json:"allowedDomains,omitempty"`
-	GroupingEnhancements string                 `json:"groupingEnhancements,omitempty"`
+	Name            string                 `json:"name,omitempty"`
+	Slug            string                 `json:"slug,omitempty"`
+	Platform        string                 `json:"platform,omitempty"`
+	IsBookmarked    *bool                  `json:"isBookmarked,omitempty"`
+	DigestsMinDelay *int                   `json:"digestsMinDelay,omitempty"`
+	DigestsMaxDelay *int                   `json:"digestsMaxDelay,omitempty"`
+	ResolveAge      *int                   `json:"resolveAge,omitempty"`
+	Options         map[string]interface{} `json:"options,omitempty"`
+	AllowedDomains  []string               `json:"allowedDomains,omitempty"`
+	GroupingEnhancements string            `json:"groupingEnhancements,omitempty"`
 }
 
 // Update various attributes and configurable settings for a given project.
