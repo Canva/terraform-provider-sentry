@@ -11,7 +11,7 @@ func Provider() terraform.ResourceProvider {
 		Schema: map[string]*schema.Schema{
 			"token": &schema.Schema{
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("SENTRY_TOKEN", nil),
 				Description: "The authentication token used to connect to Sentry",
 			},
@@ -33,7 +33,8 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"sentry_key": dataSourceSentryKey(),
+			"sentry_key":          dataSourceSentryKey(),
+			"sentry_organization": dataSourceSentryOrganization(),
 		},
 
 		ConfigureFunc: providerConfigure,

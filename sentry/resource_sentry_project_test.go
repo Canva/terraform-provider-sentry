@@ -28,9 +28,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 	    organization = "%s"
 	    team = "${sentry_team.test_team.id}"
 	    name = "Test project changed"
-			slug = "%s"
-			allowed_domains = ["www.canva.com", "www.canva.cn"]
-			grouping_enhancements = "function:panic_handler      ^-group"
+		slug = "%s"
+		allowed_domains = ["www.canva.com", "www.canva.cn"]
+		grouping_enhancements = "function:panic_handler      ^-group"
+	    slug = "%s"
+	    platform = "go"
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -50,6 +52,8 @@ func TestAccSentryProject_basic(t *testing.T) {
 						SlugPresent:          true,
 						AllowedDomains:       []string{"*"},
 						GroupingEnhancements: "",
+						SlugPresent:  true,
+						Platform:     "go",
 					}),
 				),
 			},
@@ -64,6 +68,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 						Slug:                 newProjectSlug,
 						AllowedDomains:       []string{"www.canva.com", "www.canva.cn"},
 						GroupingEnhancements: "function:panic_handler      ^-group",
+						Platform:     "go",
 					}),
 				),
 			},
@@ -159,11 +164,12 @@ type testAccSentryProjectExpectedAttributes struct {
 	Name         string
 	Organization string
 	Team         string
-
 	SlugPresent          bool
 	Slug                 string
 	GroupingEnhancements string
 	AllowedDomains       []string
+	Platform    string
+
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
@@ -202,6 +208,9 @@ func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testA
 			}
 		} else {
 			return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
+
+		if want.Platform != "" && proj.Platform != want.Platform {
+			return fmt.Errorf("got Platform %q; want %q", proj.Platform, want.Platform)
 		}
 
 		return nil
@@ -218,6 +227,7 @@ var testAccSentryProjectConfig = fmt.Sprintf(`
     organization = "%s"
     team = "${sentry_team.test_team.id}"
     name = "Test project"
+    platform = "go"
   }
 `, testOrganization, testOrganization)
 

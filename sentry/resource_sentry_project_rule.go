@@ -96,13 +96,13 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	conditions := make([]*sentryclient.CreateRuleConditionParams, len(inputConditions))
 	for i, ic := range inputConditions {
 		var condition sentryclient.CreateRuleConditionParams
-		mapstructure.Decode(ic, &condition)
+		mapstructure.WeakDecode(ic, &condition)
 		conditions[i] = &condition
 	}
 	actions := make([]*sentryclient.CreateRuleActionParams, len(inputActions))
 	for i, ia := range inputActions {
 		var action sentryclient.CreateRuleActionParams
-		mapstructure.Decode(ia, &action)
+		mapstructure.WeakDecode(ia, &action)
 		actions[i] = &action
 	}
 
@@ -135,10 +135,9 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	id := d.Id()
 
-	rules, _, err := client.Rules.List(org, project)
-	if err != nil {
-		d.SetId("")
-		return nil
+	rules, resp, err := client.Rules.List(org, project)
+	if found, err := checkClientGet(resp, err, d); !found {
+		return err
 	}
 
 	var rule *sentryclient.Rule
@@ -199,7 +198,7 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	params := &sentryclient.Rule{
 		ID:          id,
 		ActionMatch: actionMatch,
-		Environment: environment,
+		Environment: &environment,
 		Frequency:   frequency,
 		Name:        name,
 		Conditions:  conditions,
@@ -207,7 +206,7 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if environment != "" {
-		params.Environment = environment
+		params.Environment = &environment
 	}
 
 	_, _, err := client.Rules.Update(org, project, id, params)

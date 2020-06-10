@@ -19,8 +19,8 @@ Pre-compiled binaries are available from the [Releases](https://github.com/jiany
 ```
 # Configure the Sentry Provider
 provider "sentry" {
-    token = "${var.sentry_token}"
-    base_url = "${var.sentry_base_url}"
+    token = var.sentry_token
+    base_url = var.sentry_base_url
 }
 ```
 
@@ -95,10 +95,11 @@ The following attributes are exported:
 # Create a project
 resource "sentry_project" "default" {
     organization = "my-organization"
-    team     = "my-team"
-    name     = "Web App"
-    slug     = "web-app"
-    platform = "javascript"
+    team        = "my-team"
+    name        = "Web App"
+    slug        = "web-app"
+    platform    = "javascript"
+    resolve_age = 720
 }
 ```
 
@@ -111,6 +112,7 @@ The following arguments are supported:
 * `name` - (Required) The human readable name for the project.
 * `slug` - (Optional) The unique URL slug for this project. If this is not provided a slug is automatically generated based on the name.
 * `platform` - (Optional) The integration platform.
+* `resolve_age` - (Optional) Hours in which an issue is automatically resolve if not seen after this amount of time.
 
 ##### Attributes Reference
 
@@ -197,15 +199,22 @@ resource "sentry_rule" "default" {
     action_match = "any"
     frequency    = 30
     environment  = "production"
+    conditions = [
+      {
+        id       = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
+        value    = 500
+        interval = "1h"
+      }
+    ]
 
-    actions = [{
-        id = "sentry.rules.actions.notify_event.NotifyEventAction"
-    }]
-
-    conditions = [{
-        id = "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
-    }]
-}
+    actions = [
+      {
+        id        = "sentry.integrations.slack.notify_action.SlackNotifyServiceAction"
+        channel   = "#alerts"
+        workspace = "12345"
+      }
+    ]
+  }
 ```
 
 ##### Argument Reference
