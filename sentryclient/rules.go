@@ -77,6 +77,7 @@ type CreateRuleActionParams struct {
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
+	Service string `json:"service"`
 }
 
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
