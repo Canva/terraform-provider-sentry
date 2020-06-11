@@ -161,10 +161,13 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(rule.ID)
 	d.Set("name", rule.Name)
 	d.Set("actions", rule.Actions)
-	d.Set("action_match", rule.ActionMatch)
 	d.Set("conditions", rule.Conditions)
 	d.Set("frequency", rule.Frequency)
 	d.Set("environment", rule.Environment)
+
+	d.Set("action_match", rule.ActionMatch)
+	d.Set("organization", org)
+	d.Set("project", project)
 
 	return nil
 }
