@@ -26,7 +26,7 @@ type RuleCondition struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Interval string `json:"interval"`
-	Value    string `json:"value"`
+	Value    int `json:"value"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
@@ -84,7 +84,7 @@ type CreateRuleActionParams struct {
 type CreateRuleConditionParams struct {
 	ID       string `json:"id"`
 	Interval string `json:"interval"`
-	Value    string    `json:"value"`
+	Value    int    `json:"value"`
 }
 
 // Create a new alert rule bound to a project.
