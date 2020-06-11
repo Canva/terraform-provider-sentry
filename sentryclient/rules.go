@@ -41,6 +41,7 @@ type RuleAction struct {
 	ChannelID string `json:"channel_id"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
+	Service   string `json:"service,omitempty"`
 }
 
 // ProjectKeyService provides methods for accessing Sentry project
@@ -79,6 +80,7 @@ type CreateRuleActionParams struct {
 	ID        string `json:"id"`
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
+	ChannelID string `json:"channel_id"`
 	Workspace string `json:"workspace"`
 	Action    string `json:"action,omitempty"`
 	Service   string `json:"service,omitempty"`
@@ -118,3 +120,4 @@ func (s *RuleService) Delete(organizationSlug string, projectSlug string, ruleID
 	resp, err := s.sling.New().Delete("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").Receive(nil, apiError)
 	return resp, relevantError(err, *apiError)
 }
+
