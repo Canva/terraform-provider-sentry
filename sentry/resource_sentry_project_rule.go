@@ -185,13 +185,13 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	conditions := make([]sentryclient.RuleCondition, len(inputConditions))
 	for i, ic := range inputConditions {
 		var condition sentryclient.RuleCondition
-		mapstructure.Decode(ic, &condition)
+		mapstructure.WeakDecode(ic, &condition)
 		conditions[i] = condition
 	}
 	actions := make([]sentryclient.RuleAction, len(inputActions))
 	for i, ia := range inputActions {
 		var action sentryclient.RuleAction
-		mapstructure.Decode(ia, &action)
+		mapstructure.WeakDecode(ia, &action)
 		actions[i] = action
 	}
 
