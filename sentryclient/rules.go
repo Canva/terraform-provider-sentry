@@ -27,9 +27,9 @@ type RuleCondition struct {
 	Name      string `json:"name"`
 	// Attribute string `json:"attribute,omitempty"`
 	// Match     string `json:"match,omitempty"`
-	// Value     int `json:"value,omitempty"`
+	Value     int `json:"value,omitempty"`
 	// Key       string `json:"key,omitempty"`
-	// Interval  string `json:"interval,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
@@ -92,7 +92,7 @@ type CreateRuleConditionParams struct {
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
-	Value     string `json:"value,omitempty"`
+	Value     int `json:"value,omitempty"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
@@ -107,7 +107,7 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 }
 
 // Update a rule.
-func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *CreateRuleParams) (*Rule, *http.Response, error) {
+func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *Rule) (*Rule, *http.Response, error) {
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
