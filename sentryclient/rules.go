@@ -107,7 +107,7 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 }
 
 // Update a rule.
-func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *Rule) (*Rule, *http.Response, error) {
+func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *CreateRuleParams) (*Rule, *http.Response, error) {
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
