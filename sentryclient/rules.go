@@ -27,7 +27,7 @@ type RuleCondition struct {
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
-	Value     string `json:"value,omitempty"`
+	Value     int `json:"value,omitempty"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
