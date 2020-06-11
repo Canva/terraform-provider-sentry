@@ -3,7 +3,7 @@ package sentryclient
 import (
 	"net/http"
 	"time"
-
+	"fmt"
 	"github.com/dghubble/sling"
 )
 
@@ -23,10 +23,13 @@ type Rule struct {
 // RuleCondition represents the conditions for each rule.
 // https://github.com/getsentry/sentry/blob/9.0.0/src/sentry/api/serializers/models/rule.py
 type RuleCondition struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Interval string `json:"interval"`
-	Value    int `json:"value"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
@@ -77,14 +80,19 @@ type CreateRuleActionParams struct {
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
-	Service string `json:"service"`
+	Action    string `json:"action,omitempty"`
+	Service   string `json:"service,omitempty"`
 }
 
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
 type CreateRuleConditionParams struct {
-	ID       string `json:"id"`
-	Interval string `json:"interval"`
-	Value    int    `json:"value"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // Create a new alert rule bound to a project.
@@ -92,6 +100,7 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Post("projects/"+organizationSlug+"/"+projectSlug+"/rules/").BodyJSON(params).Receive(rule, apiError)
+	fmt.Printf("HELLO WORLD")
 	return rule, resp, relevantError(err, *apiError)
 }
 
