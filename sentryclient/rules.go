@@ -25,11 +25,11 @@ type Rule struct {
 type RuleCondition struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
-	// Attribute string `json:"attribute,omitempty"`
-	// Match     string `json:"match,omitempty"`
-	Value     int `json:"value"`
-	// Key       string `json:"key,omitempty"`
-	Interval  string `json:"interval"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     int `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
