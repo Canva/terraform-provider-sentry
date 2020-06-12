@@ -208,7 +208,7 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	params := &sentryclient.Rule{
 		ID:          id,
 		ActionMatch: actionMatch,
-		Environment: &environment,
+		Environment: environment,
 		Frequency:   frequency,
 		Name:        name,
 		Conditions:  conditions,
@@ -216,7 +216,7 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if environment != "" {
-		params.Environment = &environment
+		params.Environment = environment
 	}
 
 	_, _, err := client.Rules.Update(org, project, id, params)

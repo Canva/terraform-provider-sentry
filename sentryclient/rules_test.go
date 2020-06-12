@@ -53,7 +53,7 @@ func TestRulesService_List(t *testing.T) {
 			{
 				ID:          "123456",
 				ActionMatch: "all",
-				Environment: &environment,
+				Environment: environment,
 				Frequency:   30,
 				Name:        "Notify errors",
 				Conditions: []RuleCondition{
@@ -159,7 +159,7 @@ func TestRulesService_Create(t *testing.T) {
 		expected := Rule{
 			ID:          "123456",
 			ActionMatch: "all",
-			Environment: &environment,
+			Environment: environment,
 			Frequency:   30,
 			Name:        "Notify errors",
 			Conditions: []RuleCondition{
@@ -238,7 +238,7 @@ func TestRulesService_Update(t *testing.T) {
 		params := &Rule{
 			ID:          "123456",
 			ActionMatch: "all",
-			Environment: &environment,
+			Environment: environment,
 			Frequency:   30,
 			Name:        "Notify errors",
 			Conditions: []RuleCondition{
@@ -269,7 +269,7 @@ func TestRulesService_Update(t *testing.T) {
 		expected := Rule{
 			ID:          "123456",
 			ActionMatch: "all",
-			Environment: &environment,
+			Environment: environment,
 			Frequency:   30,
 			Name:        "Notify errors",
 			Conditions: []RuleCondition{
