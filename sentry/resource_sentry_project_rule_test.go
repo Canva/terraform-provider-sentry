@@ -238,7 +238,7 @@ resource "sentry_rule" "test_rule" {
 	conditions = [
 		{
 			id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
-			value = 100
+			value = "100"
 			name = "An issue is seen more than 100 times in 1m"
 			interval = "1m"
 	 	},
@@ -246,7 +246,7 @@ resource "sentry_rule" "test_rule" {
 			id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 			interval = "1m"
 			name = "An issue is seen by more than 25 users in 1m"
-			value = 25
+			value = "25"
 	 	}
 	]
 }

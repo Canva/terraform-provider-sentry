@@ -114,7 +114,8 @@ type CreateRuleConditionParams struct {
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
-	Value     int `json:"value,omitempty"`
+	// The API for create accepts a string value
+	Value     string `json:"value,omitempty"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
@@ -127,7 +128,8 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	// log.Printf("EXPECTED: %+v\n", params)
 
 	encoded_params, _ := json.Marshal(params)
-	log.Printf("EXPECTED: %s\n", string(encoded_params))	
+	log.Printf("EXPECTED: %s\n", string(encoded_params))
+	fmt.Printf("EXPECTED: %s\n", string(encoded_params))	
 
 	// var decoded_params CreateRuleParams
 	// mapstructure.WeakDecode(encoded_params, &decoded_params)

@@ -25,7 +25,7 @@ func TestRulesService_List(t *testing.T) {
 				{
 				  "id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition",
 				  "name": "An issue is first seen",
-          "value": 500,
+          "value": "500",
           "interval": "1h"
 				}
 			  ],
@@ -137,7 +137,7 @@ func TestRulesService_Create(t *testing.T) {
 			Conditions: []*CreateRuleConditionParams{
 				{
 					ID:       "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition",
-					Value:    500,
+					Value:    "500",
 					Interval: "1h",
 				},
 			},
