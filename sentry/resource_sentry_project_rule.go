@@ -1,7 +1,7 @@
 package sentry
 
 import (
-	"errors"
+	// "errors"
 	"encoding/json"
 	"log"
 
@@ -149,26 +149,36 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	// 	return err
 	// }
 
-	log.Printf("Looking for rule with id %s", id)
 
-	rules, _, err := client.Rules.List(org, project)
+	// rules, _, err := client.Rules.List(org, project)
+	// if err != nil {
+	// 	d.SetId("")
+	// 	return nil
+	// }
+
+	// log.Printf("Looking for rule with id %s", id)
+
+
+	// var rule *sentryclient.Rule
+	// for _, r := range rules {
+	// 	log.Printf("id: %s", r.ID)
+
+	// 	if r.ID == id {
+	// 		rule = &r
+	// 		break
+	// 	}
+	// }
+
+	// if rule == nil {
+	// 	return errors.New("Could not find rule with ID " + id)
+	// }
+
+	//try read
+	rule, _, err := client.Rules.Read(org, project, id)
+
 	if err != nil {
 		d.SetId("")
 		return nil
-	}
-
-	var rule *sentryclient.Rule
-	for _, r := range rules {
-		log.Printf("id: %s", r.ID)
-
-		if r.ID == id {
-			rule = &r
-			break
-		}
-	}
-
-	if rule == nil {
-		return errors.New("Could not find rule with ID " + id)
 	}
 
 	encoded_rule, _ := json.Marshal(rule)

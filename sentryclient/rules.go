@@ -80,6 +80,13 @@ func (s *RuleService) List(organizationSlug string, projectSlug string) ([]Rule,
 	return *rules, resp, relevantError(err, *apiError)
 }
 
+func (s *RuleService) Read(organizationSlug string, projectSlug string, ruleId string) (Rule, *http.Response, error) {
+	rule := new(Rule)
+	apiError := new(APIError)
+	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleId+"/").Receive(rule, apiError)
+	return *rule, resp, relevantError(err, *apiError)
+}
+
 // CreateRuleParams are the parameters for RuleService.Create.
 type CreateRuleParams struct {
 	ActionMatch string                       `json:"actionMatch"`
