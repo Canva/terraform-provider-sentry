@@ -2,6 +2,8 @@ package sentry
 
 import (
 	"errors"
+	"encoding/json"
+	"log"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -96,13 +98,13 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	conditions := make([]*sentryclient.CreateRuleConditionParams, len(inputConditions))
 	for i, ic := range inputConditions {
 		var condition sentryclient.CreateRuleConditionParams
-		mapstructure.WeakDecode(ic, &condition)
+		mapstructure.Decode(ic, &condition)
 		conditions[i] = &condition
 	}
 	actions := make([]*sentryclient.CreateRuleActionParams, len(inputActions))
 	for i, ia := range inputActions {
 		var action sentryclient.CreateRuleActionParams
-		mapstructure.WeakDecode(ia, &action)
+		mapstructure.Decode(ia, &action)
 		actions[i] = &action
 	}
 
@@ -123,6 +125,13 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	encoded_params, _ := json.Marshal(params)
+	log.Printf("create rule params: %s\n", string(encoded_params))
+
+	encoded_rule, _ := json.Marshal(rule)
+	log.Printf("rule create rule: %s\n", string(encoded_rule))
+
 
 	d.SetId(rule.ID)
 
@@ -157,6 +166,9 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	if rule == nil {
 		return errors.New("Could not find rule with ID " + id)
 	}
+
+	encoded_rule, _ := json.Marshal(rule)
+	log.Printf("rule read: %s\n", string(encoded_rule))
 
 	d.SetId(rule.ID)
 	d.Set("name", rule.Name)
@@ -195,13 +207,13 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	conditions := make([]sentryclient.RuleCondition, len(inputConditions))
 	for i, ic := range inputConditions {
 		var condition sentryclient.RuleCondition
-		mapstructure.WeakDecode(ic, &condition)
+		mapstructure.Decode(ic, &condition)
 		conditions[i] = condition
 	}
 	actions := make([]sentryclient.RuleAction, len(inputActions))
 	for i, ia := range inputActions {
 		var action sentryclient.RuleAction
-		mapstructure.WeakDecode(ia, &action)
+		mapstructure.Decode(ia, &action)
 		actions[i] = action
 	}
 
