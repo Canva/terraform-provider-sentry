@@ -66,7 +66,10 @@ func (s *RuleService) List(organizationSlug string, projectSlug string) ([]Rule,
 	rules := new([]Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/").Receive(rules, apiError)
-	log.Printf("LIST: %+v\n", rules)
+	encoded_rules, _ := json.Marshal(rules)
+	log.Printf("LIST: %s\n", string(rules))
+
+	// log.Printf("LIST: %+v\n", rules)
 	return *rules, resp, relevantError(err, *apiError)
 }
 
@@ -107,10 +110,10 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Post("projects/"+organizationSlug+"/"+projectSlug+"/rules/").BodyJSON(params).Receive(rule, apiError)
-	log.Printf("EXPECTED: %+v\n", params)
+	// log.Printf("EXPECTED: %+v\n", params)
 
-	// encoded_params, _ := json.Marshal(params)
-	// log.Printf(string(encoded_params))	
+	encoded_params, _ := json.Marshal(params)
+	log.Printf("EXPECTED: %s\n", string(encoded_params))	
 
 	// var decoded_params CreateRuleParams
 	// mapstructure.WeakDecode(encoded_params, &decoded_params)
