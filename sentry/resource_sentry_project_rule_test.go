@@ -24,7 +24,7 @@ func TestAccSentryRule_basic(t *testing.T) {
 		organization = "%s"
 		project = "%s"
 		action_match = "all"
-		frequency    = 1400
+		frequency    = 1300
 		environment  = "prod"
 		actions = [
 			{
@@ -93,10 +93,34 @@ func TestAccSentryRule_basic(t *testing.T) {
 				Config: testAccSentryRuleUpdateConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
-					// testAccCheckSentryRuleAttributes(&team, &testAccSentryRuleExpectedAttributes{
-					// 	Name: "Test team changed",
-					// 	Slug: newTeamSlug,
-					// }),
+					testAccCheckSentryRuleAttributes(&rule, &testAccSentryRuleExpectedAttributes{
+						Name: "Important Issue",
+						// Organization: testOrganization,
+						// Project: projectSlug,
+						ActionMatch: "all",
+						Frequency: 1300,
+						Environment: "prod",
+						Actions: []sentryclient.RuleAction{
+							{
+								ID: "sentry.rules.actions.notify_event.NotifyEventAction",
+								Name: "Send a notification (for all legacy integrations)",  // Default name added by Sentry
+							},
+						},
+						Conditions: []sentryclient.RuleCondition{
+							{
+								ID: "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+								Value: 101,
+								Name: "An issue is seen more than 100 times in 1m",
+								Interval: "1h",
+							},
+							{
+								ID: "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
+								Interval: "1m",
+								Name: "An issue is seen by more than 25 users in 1m",
+								Value: 30,
+							},
+						},
+					}),
 				),
 			},
 		},
@@ -191,15 +215,15 @@ func testAccCheckSentryRuleAttributes(rule *sentryclient.Rule, want *testAccSent
 		// }
 
 		if rule.ActionMatch != want.ActionMatch {
-			return fmt.Errorf("got action_match %q; want %q", rule.ActionMatch, want.ActionMatch)
+			return fmt.Errorf("got action_match %s; want %s", rule.ActionMatch, want.ActionMatch)
 		}
 
 		if rule.Frequency != want.Frequency {
-			return fmt.Errorf("got frequency %q; want %q", rule.Frequency, want.Frequency)
+			return fmt.Errorf("got frequency %d; want %d", rule.Frequency, want.Frequency)
 		}
 
 		if rule.Environment != want.Environment {
-			return fmt.Errorf("got environment %q; want %q", rule.Environment, want.Environment)
+			return fmt.Errorf("got environment %s; want %s", rule.Environment, want.Environment)
 		}
 
 		if !cmp.Equal(rule.Actions, want.Actions){
