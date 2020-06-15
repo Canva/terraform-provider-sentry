@@ -66,10 +66,15 @@ func (s *RuleService) List(organizationSlug string, projectSlug string) ([]Rule,
 	rules := new([]Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/").Receive(rules, apiError)
-	for i, rule := range rules {
+	for i, rule := range (*rules) {
 		encoded_rule, _ := json.Marshal(rule)
-		log.Printf("rule[%i]: %s\n", i, string(encoded_rule))
+		log.Printf("rule[%d]: %s\n", i, string(encoded_rule))
 	}
+
+	// for i := 0; i < len(*rules); i++ {
+	// 	encoded_rule, _ := json.Marshal((*rules)[i])
+	// 	log.Printf("rule[%i]: %s\n", i, string(encoded_rule))
+	// }
 
 	// log.Printf("LIST: %+v\n", rules)
 	return *rules, resp, relevantError(err, *apiError)
