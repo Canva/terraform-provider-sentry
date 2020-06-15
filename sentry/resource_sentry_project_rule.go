@@ -218,20 +218,20 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		frequency = defaultFrequency
 	}
 
-	conditions := make([]sentryclient.RuleCondition, len(inputConditions))
+	conditions := make([]sentryclient.UpdateRuleConditionParams, len(inputConditions))
 	for i, ic := range inputConditions {
-		var condition sentryclient.RuleCondition
+		var condition sentryclient.UpdateRuleConditionParams
 		mapstructure.Decode(ic, &condition)
 		conditions[i] = condition
 	}
-	actions := make([]sentryclient.RuleAction, len(inputActions))
+	actions := make([]sentryclient.UpdateRuleActionParams, len(inputActions))
 	for i, ia := range inputActions {
-		var action sentryclient.RuleAction
+		var action sentryclient.UpdateRuleActionParams
 		mapstructure.Decode(ia, &action)
 		actions[i] = action
 	}
 
-	params := &sentryclient.Rule{
+	params := &sentryclient.UpdateRuleParams{
 		ID:          id,
 		ActionMatch: actionMatch,
 		Environment: environment,

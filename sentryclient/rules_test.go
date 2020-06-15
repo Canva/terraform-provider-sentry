@@ -235,20 +235,20 @@ func TestRulesService_Update(t *testing.T) {
 		}`)
 
 		environment := "staging"
-		params := &Rule{
+		params := &UpdateRuleParams{
 			ID:          "123456",
 			ActionMatch: "all",
 			Environment: environment,
 			Frequency:   30,
 			Name:        "Notify errors",
-			Conditions: []RuleCondition{
+			Conditions: []UpdateRuleConditionParams{
 				{
 					ID:       "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition",
-					Value:    500,
+					Value:    "500",
 					Interval: "1h",
 				},
 			},
-			Actions: []RuleAction{
+			Actions: []UpdateRuleActionParams{
 				{
 					ID:        "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
 					Name:      "Send a notification to the Dummy Slack workspace to #dummy-channel and show tags [environment] in notification",

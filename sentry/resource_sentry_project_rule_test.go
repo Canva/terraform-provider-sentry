@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	// "github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/google/go-cmp/cmp"
@@ -17,7 +17,6 @@ const projectSlug = "test-project"
 func TestAccSentryRule_basic(t *testing.T) {
 	var rule sentryclient.Rule
 
-	random := acctest.RandInt()
 
 	testAccSentryRuleUpdateConfig := fmt.Sprintf(`
 	resource "sentry_rule" "test_rule" {
@@ -25,7 +24,7 @@ func TestAccSentryRule_basic(t *testing.T) {
 		organization = "%s"
 		project = "%s"
 		action_match = "all"
-		frequency    = %d
+		frequency    = 1400
 		environment  = "prod"
 		actions = [
 			{
@@ -35,19 +34,19 @@ func TestAccSentryRule_basic(t *testing.T) {
 		conditions = [
 			{
 				id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
-				value = 100
-				name = "An issue is seen more than 100 times in 1 minute"
-				interval = "1m"
+				value = 101
+				name = "An issue is seen more than 100 times in 1 hour"
+				interval = "1h"
 		 	},
 		 	{
 				id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 				interval = "1m"
 				name = "An issue is seen by more than 25 users in 1 minute"
-				value = 25
+				value = 30
 		 	}
 		]
 	}
-	`, testOrganization, projectSlug, random)
+	`, testOrganization, projectSlug)
 
 	fmt.Printf("%s", testAccSentryRuleUpdateConfig)
 
@@ -90,16 +89,16 @@ func TestAccSentryRule_basic(t *testing.T) {
 					}),
 				),
 			},
-			// {
-			// 	Config: testAccSentryRuleUpdateConfig,
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		testAccCheckSentryRuleExists("sentry_team.test_team", &team),
-			// 		testAccCheckSentryRuleAttributes(&team, &testAccSentryRuleExpectedAttributes{
-			// 			Name: "Test team changed",
-			// 			Slug: newTeamSlug,
-			// 		}),
-			// 	),
-			// },
+			{
+				Config: testAccSentryRuleUpdateConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
+					// testAccCheckSentryRuleAttributes(&team, &testAccSentryRuleExpectedAttributes{
+					// 	Name: "Test team changed",
+					// 	Slug: newTeamSlug,
+					// }),
+				),
+			},
 		},
 	})
 }
@@ -238,7 +237,7 @@ resource "sentry_rule" "test_rule" {
 	conditions = [
 		{
 			id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
-			value = "100"
+			value = 100
 			name = "An issue is seen more than 100 times in 1m"
 			interval = "1m"
 	 	},
@@ -246,7 +245,7 @@ resource "sentry_rule" "test_rule" {
 			id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 			interval = "1m"
 			name = "An issue is seen by more than 25 users in 1m"
-			value = "25"
+			value = 25
 	 	}
 	]
 }

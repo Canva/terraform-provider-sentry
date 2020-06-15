@@ -120,6 +120,41 @@ type CreateRuleConditionParams struct {
 	Interval  string `json:"interval,omitempty"`
 }
 
+
+
+type UpdateRuleParams struct {
+	ID          string          `json:"id"`
+	ActionMatch string                       `json:"actionMatch"`
+	Environment string                       `json:"environment,omitempty"`
+	Frequency   int                          `json:"frequency"`
+	Name        string                       `json:"name"`
+	Conditions  []UpdateRuleConditionParams `json:"conditions"`
+	Actions     []UpdateRuleActionParams    `json:"actions"`
+	Created     time.Time       `json:"dateCreated"`
+}
+
+type UpdateRuleActionParams struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Tags      string `json:"tags"`
+	Channel   string `json:"channel"`
+	ChannelID string `json:"channel_id"`
+	Workspace string `json:"workspace"`
+	Action    string `json:"action,omitempty"`
+	Service   string `json:"service,omitempty"`
+}
+
+type UpdateRuleConditionParams struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
+}
+
+
 // Create a new alert rule bound to a project.
 func (s *RuleService) Create(organizationSlug string, projectSlug string, params *CreateRuleParams) (*Rule, *http.Response, error) {
 	rule := new(Rule)
@@ -141,7 +176,7 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 }
 
 // Update a rule.
-func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *Rule) (*Rule, *http.Response, error) {
+func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *UpdateRuleParams) (*Rule, *http.Response, error) {
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
