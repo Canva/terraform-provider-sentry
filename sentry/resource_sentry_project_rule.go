@@ -149,6 +149,8 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	// 	return err
 	// }
 
+	log.Printf("Looking for rule with id %s", id)
+
 	rules, _, err := client.Rules.List(org, project)
 	if err != nil {
 		d.SetId("")
@@ -157,6 +159,8 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 
 	var rule *sentryclient.Rule
 	for _, r := range rules {
+		log.Printf("id: %s", r.ID)
+
 		if r.ID == id {
 			rule = &r
 			break
