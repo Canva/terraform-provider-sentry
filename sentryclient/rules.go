@@ -128,8 +128,8 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	// log.Printf("EXPECTED: %+v\n", params)
 
 	encoded_params, _ := json.Marshal(params)
-	log.Printf("EXPECTED: %s\n", string(encoded_params))
-	fmt.Printf("EXPECTED: %s\n", string(encoded_params))	
+	log.Printf("CREATE: %s\n", string(encoded_params))
+	fmt.Printf("CREATE: %s\n", string(encoded_params))	
 
 	// var decoded_params CreateRuleParams
 	// mapstructure.WeakDecode(encoded_params, &decoded_params)
@@ -145,6 +145,12 @@ func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
+
+	encoded_params, _ := json.Marshal(params)
+	log.Printf("UPDATE: %s\n", string(encoded_params))
+	fmt.Printf("UPDATE: %s\n", string(encoded_params))	
+
+
 	return rule, resp, relevantError(err, *apiError)
 }
 

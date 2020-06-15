@@ -245,10 +245,17 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		params.Environment = environment
 	}
 
-	_, _, err := client.Rules.Update(org, project, id, params)
+	rule, _, err := client.Rules.Update(org, project, id, params)
 	if err != nil {
 		return err
 	}
+
+	encoded_params, _ := json.Marshal(params)
+	log.Printf("update rule params: %s\n", string(encoded_params))
+
+	encoded_rule, _ := json.Marshal(rule)
+	log.Printf("rule update rule: %s\n", string(encoded_rule))
+
 
 	return resourceSentryRuleRead(d, meta)
 }
