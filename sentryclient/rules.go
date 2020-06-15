@@ -4,7 +4,11 @@ import (
 	"net/http"
 	"time"
 	"fmt"
+	"encoding/json"
 	"github.com/dghubble/sling"
+
+	"github.com/mitchellh/mapstructure"
+
 )
 
 // Rule represents an alert rule configured for this project.
@@ -27,7 +31,7 @@ type RuleCondition struct {
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
-	Value     int `json:"value,omitempty"`
+	Value     int `json:"value"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
@@ -92,7 +96,7 @@ type CreateRuleConditionParams struct {
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
-	Value     int `json:"value,omitempty"`
+	Value     int `json:"value"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
@@ -102,6 +106,14 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Post("projects/"+organizationSlug+"/"+projectSlug+"/rules/").BodyJSON(params).Receive(rule, apiError)
+	encoded_params, _ := json.Marshal(params)
+	fmt.Printf(string(encoded_params))	
+
+	var decoded_params CreateRuleParams
+	mapstructure.WeakDecode(encoded_params, &decoded_params)
+	fmt.Printf("EXPECTED: %+v\n", decoded_params)
+
+
 	fmt.Printf("HELLO WORLD")
 	return rule, resp, relevantError(err, *apiError)
 }
