@@ -1,10 +1,6 @@
 package sentry
 
 import (
-	// "errors"
-	"encoding/json"
-	"log"
-
 	"github.com/canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/mitchellh/mapstructure"
@@ -126,13 +122,6 @@ func resourceSentryRuleCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	encoded_params, _ := json.Marshal(params)
-	log.Printf("create rule params: %s\n", string(encoded_params))
-
-	encoded_rule, _ := json.Marshal(rule)
-	log.Printf("rule create rule: %s\n", string(encoded_rule))
-
-
 	d.SetId(rule.ID)
 
 	return resourceSentryRuleRead(d, meta)
@@ -144,45 +133,12 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	id := d.Id()
 
-	// rules, resp, err := client.Rules.List(org, project)
-	// if found, err := checkClientGet(resp, err, d); !found {
-	// 	return err
-	// }
-
-
-	// rules, _, err := client.Rules.List(org, project)
-	// if err != nil {
-	// 	d.SetId("")
-	// 	return nil
-	// }
-
-	// log.Printf("Looking for rule with id %s", id)
-
-
-	// var rule *sentryclient.Rule
-	// for _, r := range rules {
-	// 	log.Printf("id: %s", r.ID)
-
-	// 	if r.ID == id {
-	// 		rule = &r
-	// 		break
-	// 	}
-	// }
-
-	// if rule == nil {
-	// 	return errors.New("Could not find rule with ID " + id)
-	// }
-
-	//try read
-	rule, _, err := client.Rules.Read(org, project, id)
+	rule, _, err := client.Rules.Get(org, project, id)
 
 	if err != nil {
 		d.SetId("")
 		return nil
 	}
-
-	encoded_rule, _ := json.Marshal(rule)
-	log.Printf("rule read: %s\n", string(encoded_rule))
 
 	d.SetId(rule.ID)
 	d.Set("name", rule.Name)
@@ -245,17 +201,10 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		params.Environment = environment
 	}
 
-	rule, _, err := client.Rules.Update(org, project, id, params)
+	_, _, err := client.Rules.Update(org, project, id, params)
 	if err != nil {
 		return err
 	}
-
-	encoded_params, _ := json.Marshal(params)
-	log.Printf("update rule params: %s\n", string(encoded_params))
-
-	encoded_rule, _ := json.Marshal(rule)
-	log.Printf("rule update rule: %s\n", string(encoded_rule))
-
 
 	return resourceSentryRuleRead(d, meta)
 }

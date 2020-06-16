@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
-	// "github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/google/go-cmp/cmp"
@@ -35,20 +34,18 @@ func TestAccSentryRule_basic(t *testing.T) {
 			{
 				id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
 				value = 101
-				name = "An issue is seen more than 100 times in 1 hour"
+				name = "An issue is seen more than 101 times in 1h"
 				interval = "1h"
 		 	},
 		 	{
 				id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 				interval = "1m"
-				name = "An issue is seen by more than 25 users in 1 minute"
+				name = "An issue is seen by more than 30 users in 1 minute"
 				value = 30
 		 	}
 		]
 	}
 	`, testOrganization, projectSlug)
-
-	fmt.Printf("%s", testAccSentryRuleUpdateConfig)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -61,8 +58,6 @@ func TestAccSentryRule_basic(t *testing.T) {
 					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
 					testAccCheckSentryRuleAttributes(&rule, &testAccSentryRuleExpectedAttributes{
 						Name: "Important Issue",
-						// Organization: testOrganization,
-						// Project: projectSlug,
 						ActionMatch: "all",
 						Frequency: 1440,
 						Environment: "prod",
@@ -95,8 +90,6 @@ func TestAccSentryRule_basic(t *testing.T) {
 					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
 					testAccCheckSentryRuleAttributes(&rule, &testAccSentryRuleExpectedAttributes{
 						Name: "Important Issue",
-						// Organization: testOrganization,
-						// Project: projectSlug,
 						ActionMatch: "all",
 						Frequency: 1300,
 						Environment: "prod",
@@ -110,13 +103,13 @@ func TestAccSentryRule_basic(t *testing.T) {
 							{
 								ID: "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
 								Value: 101,
-								Name: "An issue is seen more than 100 times in 1m",
+								Name: "An issue is seen more than 101 times in 1h",
 								Interval: "1h",
 							},
 							{
 								ID: "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
 								Interval: "1m",
-								Name: "An issue is seen by more than 25 users in 1m",
+								Name: "An issue is seen by more than 30 users in 1m",
 								Value: 30,
 							},
 						},
@@ -131,17 +124,23 @@ func testAccCheckSentryRuleDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*sentryclient.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "sentry_team" {
+		if rs.Type != "sentry_rule" {
 			continue
 		}
 
-		team, resp, err := client.Teams.Get(
-			rs.Primary.Attributes["organization"],
-			rs.Primary.ID,
-		)
+
+		rules, resp, err := client.Rules.List(rs.Primary.Attributes["organization"], projectSlug)
+		var rule *sentryclient.Rule
+		for _, r := range rules {
+			if r.ID == rs.Primary.ID {
+				rule = &r
+				break
+			}
+		}
+
 		if err == nil {
-			if team != nil {
-				return errors.New("Team still exists")
+			if rule != nil {
+				return errors.New("Rule still exists")
 			}
 		}
 		if resp.StatusCode != 404 {
@@ -169,12 +168,10 @@ func testAccCheckSentryRuleExists(n string, rule *sentryclient.Rule, org string,
 		if err != nil {
 			return err
 		}
-		fmt.Printf("EXPECTED: %+v\n", rs.Primary)
 
 		var SentryRule *sentryclient.Rule
 
 		for _, r := range SentryRules {
-			fmt.Printf("RULE: %+v\n", r)
 			if r.ID == rs.Primary.ID {
 				SentryRule = &r
 				break
@@ -207,12 +204,6 @@ func testAccCheckSentryRuleAttributes(rule *sentryclient.Rule, want *testAccSent
 		if rule.Name != want.Name {
 			return fmt.Errorf("got rule name %q; want %q", rule.Name, want.Name)
 		}
-		// if rule.Organization != want.Organization {
-		// 	return fmt.Errorf("got organization %q; want %q", rule.Organization, want.Organization)
-		// }
-		// if rule.Project != want.Project {
-		// 	return fmt.Errorf("got project %q; want %q", rule.Project, want.Project)
-		// }
 
 		if rule.ActionMatch != want.ActionMatch {
 			return fmt.Errorf("got action_match %s; want %s", rule.ActionMatch, want.ActionMatch)
@@ -233,12 +224,6 @@ func testAccCheckSentryRuleAttributes(rule *sentryclient.Rule, want *testAccSent
 		if !cmp.Equal(rule.Conditions, want.Conditions){
 			return fmt.Errorf("got conditions: %+v\n; want %+v\n", rule.Conditions, want.Conditions)	
 		}
-		// 	return errors.New("got empty slug; want non-empty slug")
-		// }
-
-		// if want.Slug != "" && team.Slug != want.Slug {
-		// 	return fmt.Errorf("got slug %q; want %q", team.Slug, want.Slug)
-		// }
 
 		return nil
 	}

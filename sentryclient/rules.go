@@ -3,12 +3,7 @@ package sentryclient
 import (
 	"net/http"
 	"time"
-	"fmt"
-	"encoding/json"
 	"github.com/dghubble/sling"
-	"log"
-	// "github.com/mitchellh/mapstructure"
-
 )
 
 // Rule represents an alert rule configured for this project.
@@ -26,7 +21,7 @@ type Rule struct {
 
 // RuleCondition represents the conditions for each rule.
 // https://github.com/getsentry/sentry/blob/9.0.0/src/sentry/api/serializers/models/rule.py
-type RuleCondition struct {
+type RuleCondition struct {	
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
@@ -66,25 +61,14 @@ func (s *RuleService) List(organizationSlug string, projectSlug string) ([]Rule,
 	rules := new([]Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/").Receive(rules, apiError)
-	// for i, rule := range (*rules) {
-	// 	encoded_rule, _ := json.Marshal(rule)
-	// 	log.Printf("rule[%d]: %s\n", i, string(encoded_rule))
-	// }
-
-	// for i := 0; i < len(*rules); i++ {
-	// 	encoded_rule, _ := json.Marshal((*rules)[i])
-	// 	log.Printf("rule[%i]: %s\n", i, string(encoded_rule))
-	// }
-
-	// log.Printf("LIST: %+v\n", rules)
 	return *rules, resp, relevantError(err, *apiError)
 }
 
-func (s *RuleService) Read(organizationSlug string, projectSlug string, ruleId string) (Rule, *http.Response, error) {
+func (s *RuleService) Get(organizationSlug string, projectSlug string, ruleId string) (*Rule, *http.Response, error) {
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleId+"/").Receive(rule, apiError)
-	return *rule, resp, relevantError(err, *apiError)
+	return rule, resp, relevantError(err, *apiError)
 }
 
 // CreateRuleParams are the parameters for RuleService.Create.
@@ -160,18 +144,6 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Post("projects/"+organizationSlug+"/"+projectSlug+"/rules/").BodyJSON(params).Receive(rule, apiError)
-	// log.Printf("EXPECTED: %+v\n", params)
-
-	encoded_params, _ := json.Marshal(params)
-	log.Printf("CREATE: %s\n", string(encoded_params))
-	fmt.Printf("CREATE: %s\n", string(encoded_params))	
-
-	// var decoded_params CreateRuleParams
-	// mapstructure.WeakDecode(encoded_params, &decoded_params)
-	// log.Printf("EXPECTED: %+v\n", decoded_params)
-
-
-	fmt.Printf("HELLO WORLD")
 	return rule, resp, relevantError(err, *apiError)
 }
 
@@ -180,12 +152,6 @@ func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
-
-	encoded_params, _ := json.Marshal(params)
-	log.Printf("UPDATE: %s\n", string(encoded_params))
-	fmt.Printf("UPDATE: %s\n", string(encoded_params))	
-
-
 	return rule, resp, relevantError(err, *apiError)
 }
 
