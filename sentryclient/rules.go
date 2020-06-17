@@ -3,7 +3,6 @@ package sentryclient
 import (
 	"net/http"
 	"time"
-
 	"github.com/dghubble/sling"
 )
 
@@ -12,7 +11,7 @@ import (
 type Rule struct {
 	ID          string          `json:"id"`
 	ActionMatch string          `json:"actionMatch"`
-	Environment string          `json:"environment"`
+	Environment string         `json:"environment"`
 	Frequency   int             `json:"frequency"`
 	Name        string          `json:"name"`
 	Conditions  []RuleCondition `json:"conditions"`
@@ -22,9 +21,14 @@ type Rule struct {
 
 // RuleCondition represents the conditions for each rule.
 // https://github.com/getsentry/sentry/blob/9.0.0/src/sentry/api/serializers/models/rule.py
-type RuleCondition struct {
+type RuleCondition struct {	
 	ID        string `json:"id"`
 	Name      string `json:"name"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	Value     int `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
 }
 
 // RuleAction represents the actions will be taken for each rule based on its conditions.
@@ -36,6 +40,7 @@ type RuleAction struct {
 	ChannelID string `json:"channel_id"`
 	Channel   string `json:"channel"`
 	Workspace string `json:"workspace"`
+	Service   string `json:"service,omitempty"`
 }
 
 // ProjectKeyService provides methods for accessing Sentry project
@@ -59,6 +64,13 @@ func (s *RuleService) List(organizationSlug string, projectSlug string) ([]Rule,
 	return *rules, resp, relevantError(err, *apiError)
 }
 
+func (s *RuleService) Get(organizationSlug string, projectSlug string, ruleId string) (*Rule, *http.Response, error) {
+	rule := new(Rule)
+	apiError := new(APIError)
+	resp, err := s.sling.New().Get("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleId+"/").Receive(rule, apiError)
+	return rule, resp, relevantError(err, *apiError)
+}
+
 // CreateRuleParams are the parameters for RuleService.Create.
 type CreateRuleParams struct {
 	ActionMatch string                       `json:"actionMatch"`
@@ -74,6 +86,7 @@ type CreateRuleActionParams struct {
 	ID        string `json:"id"`
 	Tags      string `json:"tags"`
 	Channel   string `json:"channel"`
+	ChannelID string `json:"channel_id"`
 	Workspace string `json:"workspace"`
 	Action    string `json:"action,omitempty"`
 	Service   string `json:"service,omitempty"`
@@ -82,12 +95,49 @@ type CreateRuleActionParams struct {
 // CreateRuleConditionParams models the conditions when creating the action for the rule.
 type CreateRuleConditionParams struct {
 	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Attribute string `json:"attribute,omitempty"`
+	Match     string `json:"match,omitempty"`
+	// The API for create accepts a string value
+	Value     string `json:"value,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Interval  string `json:"interval,omitempty"`
+}
+
+
+
+type UpdateRuleParams struct {
+	ID          string          `json:"id"`
+	ActionMatch string                       `json:"actionMatch"`
+	Environment string                       `json:"environment,omitempty"`
+	Frequency   int                          `json:"frequency"`
+	Name        string                       `json:"name"`
+	Conditions  []UpdateRuleConditionParams `json:"conditions"`
+	Actions     []UpdateRuleActionParams    `json:"actions"`
+	Created     time.Time       `json:"dateCreated"`
+}
+
+type UpdateRuleActionParams struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Tags      string `json:"tags"`
+	Channel   string `json:"channel"`
+	ChannelID string `json:"channel_id"`
+	Workspace string `json:"workspace"`
+	Action    string `json:"action,omitempty"`
+	Service   string `json:"service,omitempty"`
+}
+
+type UpdateRuleConditionParams struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
 	Attribute string `json:"attribute,omitempty"`
 	Match     string `json:"match,omitempty"`
 	Value     string `json:"value,omitempty"`
 	Key       string `json:"key,omitempty"`
 	Interval  string `json:"interval,omitempty"`
 }
+
 
 // Create a new alert rule bound to a project.
 func (s *RuleService) Create(organizationSlug string, projectSlug string, params *CreateRuleParams) (*Rule, *http.Response, error) {
@@ -98,7 +148,7 @@ func (s *RuleService) Create(organizationSlug string, projectSlug string, params
 }
 
 // Update a rule.
-func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *Rule) (*Rule, *http.Response, error) {
+func (s *RuleService) Update(organizationSlug string, projectSlug string, ruleID string, params *UpdateRuleParams) (*Rule, *http.Response, error) {
 	rule := new(Rule)
 	apiError := new(APIError)
 	resp, err := s.sling.New().Put("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").BodyJSON(params).Receive(rule, apiError)
@@ -111,3 +161,4 @@ func (s *RuleService) Delete(organizationSlug string, projectSlug string, ruleID
 	resp, err := s.sling.New().Delete("projects/"+organizationSlug+"/"+projectSlug+"/rules/"+ruleID+"/").Receive(nil, apiError)
 	return resp, relevantError(err, *apiError)
 }
+

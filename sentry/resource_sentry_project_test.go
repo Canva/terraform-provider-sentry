@@ -20,17 +20,18 @@ func TestAccSentryProject_basic(t *testing.T) {
 
 	testAccSentryProjectUpdateConfig := fmt.Sprintf(`
 	  resource "sentry_team" "test_team" {
-	    organization = "%s"
-	    name = "Test team"
+		organization = "%s"
+		name = "Test team"
 	  }
 
 	  resource "sentry_project" "test_project" {
-	    organization = "%s"
-	    team = "${sentry_team.test_team.id}"
-	    name = "Test project changed"
-			slug = "%s"
-			allowed_domains = ["www.canva.com", "www.canva.cn"]
-			grouping_enhancements = "function:panic_handler      ^-group"
+		organization = "%s"
+		team = "${sentry_team.test_team.id}"
+		name = "Test project changed"
+		slug = "%s"
+		allowed_domains = ["www.canva.com", "www.canva.cn"]
+		grouping_enhancements = "function:panic_handler      ^-group"
+		platform = "go"
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -50,6 +51,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 						SlugPresent:          true,
 						AllowedDomains:       []string{"*"},
 						GroupingEnhancements: "",
+						Platform:     "go",
 					}),
 				),
 			},
@@ -64,6 +66,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 						Slug:                 newProjectSlug,
 						AllowedDomains:       []string{"www.canva.com", "www.canva.cn"},
 						GroupingEnhancements: "function:panic_handler      ^-group",
+						Platform:     "go",
 					}),
 				),
 			},
@@ -159,11 +162,12 @@ type testAccSentryProjectExpectedAttributes struct {
 	Name         string
 	Organization string
 	Team         string
-
 	SlugPresent          bool
 	Slug                 string
 	GroupingEnhancements string
 	AllowedDomains       []string
+	Platform    string
+
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
@@ -204,47 +208,52 @@ func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testA
 			return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
 		}
 
+		if want.Platform != "" && proj.Platform != want.Platform {
+			return fmt.Errorf("got Platform %q; want %q", proj.Platform, want.Platform)
+		}
+
 		return nil
 	}
 }
 
 var testAccSentryProjectConfig = fmt.Sprintf(`
   resource "sentry_team" "test_team" {
-    organization = "%s"
-    name = "Test team"
+	organization = "%s"
+	name = "Test team"
   }
 
   resource "sentry_project" "test_project" {
-    organization = "%s"
-    team = "${sentry_team.test_team.id}"
-    name = "Test project"
+	organization = "%s"
+	team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	platform = "go"
   }
 `, testOrganization, testOrganization)
 
 var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
   resource "sentry_team" "test_team" {
-    organization = "%s"
-    name = "Test team"
+	organization = "%s"
+	name = "Test team"
   }
 
   resource "sentry_project" "test_project_remove_key" {
-    organization = "%s"
-    team = "${sentry_team.test_team.id}"
-    name = "Test project"
-    remove_default_key = true
+	organization = "%s"
+	team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	remove_default_key = true
   }
 `, testOrganization, testOrganization)
 
 var testAccSentryProjectRemoveRuleConfig = fmt.Sprintf(`
   resource "sentry_team" "test_team" {
-    organization = "%s"
-    name = "Test team"
+	organization = "%s"
+	name = "Test team"
   }
 
   resource "sentry_project" "test_project_remove_rule" {
-    organization = "%s"
-    team = "${sentry_team.test_team.id}"
-    name = "Test project"
-    remove_default_rule = true
+	organization = "%s"
+	team = "${sentry_team.test_team.id}"
+	name = "Test project"
+	remove_default_rule = true
   }
 `, testOrganization, testOrganization)

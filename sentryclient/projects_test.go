@@ -211,7 +211,7 @@ func TestProjectService_List(t *testing.T) {
 			Avatar: Avatar{
 				Type: "letter_avatar",
 			},
-			Organization:         expectedOrganization,
+			Organization: expectedOrganization,
 			GroupingEnhancements: "pump station grouping enhancement rule",
 		},
 	}
@@ -335,7 +335,7 @@ func TestProjectService_Get(t *testing.T) {
 			}],
 			"processingIssues": 0,
 			"relayPiiConfig": null,
-			"resolveAge": 0,
+			"resolveAge": 720,
 			"safeFields": [],
 			"scrapeJavaScript": true,
 			"scrubIPAddresses": false,
@@ -392,6 +392,7 @@ func TestProjectService_Get(t *testing.T) {
 		},
 		DigestsMinDelay:      300,
 		DigestsMaxDelay:      1800,
+		ResolveAge:           720,
 		SubjectPrefix:        "[Sentry] ",
 		AllowedDomains:       []string{"*"},
 		DataScrubber:         true,
@@ -506,7 +507,7 @@ func TestProjectService_Update(t *testing.T) {
 			"digestsMinDelay": 300,
 			"options": {
 				"sentry:origins": "http://example.com\nhttp://example.invalid",
-				"sentry:resolve_age": 0
+				"sentry:resolve_age": 720
 			},
 			"defaultEnvironment": null,
 			"features": [
@@ -523,6 +524,7 @@ func TestProjectService_Update(t *testing.T) {
 			"callSign": "PLANE-PROXY",
 			"firstEvent": null,
 			"digestsMaxDelay": 1800,
+			"resolveAge": 720,
 			"processingIssues": 0,
 			"isBookmarked": false,
 			"callSignReviewed": false,
@@ -530,7 +532,7 @@ func TestProjectService_Update(t *testing.T) {
 			"subjectTemplate": "[$project] ${tag:level}: $title",
 			"name": "Plane Proxy",
 			"groupingEnhancements": "Plane Proxy grouping enhancement rule"
-			}`)
+		}`)
 	})
 
 	client := NewClient(httpClient, nil, "")
@@ -559,11 +561,12 @@ func TestProjectService_Update(t *testing.T) {
 		Status: "active",
 		Options: map[string]interface{}{
 			"sentry:origins":     "http://example.com\nhttp://example.invalid",
-			"sentry:resolve_age": float64(0),
+			"sentry:resolve_age": float64(720),
 		},
-		DigestsMinDelay:      300,
-		DigestsMaxDelay:      1800,
-		SubjectTemplate:      "[$project] ${tag:level}: $title",
+		DigestsMinDelay: 300,
+		DigestsMaxDelay: 1800,
+		ResolveAge:      720,
+		SubjectTemplate: "[$project] ${tag:level}: $title",
 		GroupingEnhancements: "Plane Proxy grouping enhancement rule",
 	}
 	assert.Equal(t, expected, project)

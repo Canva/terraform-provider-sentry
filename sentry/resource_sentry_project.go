@@ -108,6 +108,11 @@ func resourceSentryProject() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Grouping enhancements pattern",
+			},
+			"resolve_age": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Hours in which an issue is automatically resolve if not seen after this amount of time.",
 				Computed:    true,
 			},
 
@@ -147,7 +152,6 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	d.SetId(proj.Slug)
-
 	return resourceSentryProjectRead(d, meta)
 }
 
@@ -157,10 +161,9 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	slug := d.Id()
 	org := d.Get("organization").(string)
 
-	proj, _, err := client.Projects.Get(org, slug)
-	if err != nil {
-		d.SetId("")
-		return nil
+	proj, resp, err := client.Projects.Get(org, slug)
+	if found, err := checkClientGet(resp, err, d); !found {
+		return err
 	}
 
 	d.SetId(proj.Slug)
@@ -178,6 +181,7 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("digests_max_delay", proj.DigestsMaxDelay)
 	d.Set("allowed_domains", proj.AllowedDomains)
 	d.Set("grouping_enhancements", proj.GroupingEnhancements)
+	d.Set("resolve_age", proj.ResolveAge)
 
 	// TODO: Project options
 
@@ -217,6 +221,9 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 
 	if v, ok := d.GetOk("grouping_enhancements"); ok {
 		params.GroupingEnhancements = v.(string)
+	}
+	if v, ok := d.GetOk("resolve_age"); ok {
+		params.ResolveAge = Int(v.(int))
 	}
 
 	proj, _, err := client.Projects.Update(org, slug, params)

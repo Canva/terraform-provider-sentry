@@ -1,8 +1,6 @@
 package sentry
 
 import (
-	"errors"
-
 	"github.com/canva/terraform-provider-sentry/sentryclient"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/mitchellh/mapstructure"
@@ -135,22 +133,11 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	id := d.Id()
 
-	rules, _, err := client.Rules.List(org, project)
+	rule, _, err := client.Rules.Get(org, project, id)
+
 	if err != nil {
 		d.SetId("")
 		return nil
-	}
-
-	var rule *sentryclient.Rule
-	for _, r := range rules {
-		if r.ID == id {
-			rule = &r
-			break
-		}
-	}
-
-	if rule == nil {
-		return errors.New("Could not find rule with ID " + id)
 	}
 
 	d.SetId(rule.ID)
@@ -159,6 +146,10 @@ func resourceSentryRuleRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("conditions", rule.Conditions)
 	d.Set("frequency", rule.Frequency)
 	d.Set("environment", rule.Environment)
+
+	d.Set("action_match", rule.ActionMatch)
+	d.Set("organization", org)
+	d.Set("project", project)
 
 	return nil
 }
@@ -183,20 +174,20 @@ func resourceSentryRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 		frequency = defaultFrequency
 	}
 
-	conditions := make([]sentryclient.RuleCondition, len(inputConditions))
+	conditions := make([]sentryclient.UpdateRuleConditionParams, len(inputConditions))
 	for i, ic := range inputConditions {
-		var condition sentryclient.RuleCondition
+		var condition sentryclient.UpdateRuleConditionParams
 		mapstructure.Decode(ic, &condition)
 		conditions[i] = condition
 	}
-	actions := make([]sentryclient.RuleAction, len(inputActions))
+	actions := make([]sentryclient.UpdateRuleActionParams, len(inputActions))
 	for i, ia := range inputActions {
-		var action sentryclient.RuleAction
+		var action sentryclient.UpdateRuleActionParams
 		mapstructure.Decode(ia, &action)
 		actions[i] = action
 	}
 
-	params := &sentryclient.Rule{
+	params := &sentryclient.UpdateRuleParams{
 		ID:          id,
 		ActionMatch: actionMatch,
 		Environment: environment,
