@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-
-	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func TestAccSentryKey_basic(t *testing.T) {
@@ -49,7 +47,7 @@ func TestAccSentryKey_basic(t *testing.T) {
 }
 
 func TestAccSentryKey_RateLimit(t *testing.T) {
-	var key sentryclient.ProjectKey
+	var key sentry.ProjectKey
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },

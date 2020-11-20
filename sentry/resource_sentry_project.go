@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func resourceSentryProject() *schema.Resource {
@@ -84,7 +84,7 @@ func resourceSentryProject() *schema.Resource {
 				},
 			},
 			"status": {
-				Type:     schema.TypeBool,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"digests_min_delay": {
@@ -94,20 +94,6 @@ func resourceSentryProject() *schema.Resource {
 			"digests_max_delay": {
 				Type:     schema.TypeInt,
 				Computed: true,
-			},
-			"allowed_domains": {
-				Type:        schema.TypeList,
-				Computed:    true,
-				Description: "The domains allowed to be collected",
-				Optional:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"grouping_enhancements": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Grouping enhancements pattern",
 			},
 			"resolve_age": {
 				Type:        schema.TypeInt,
@@ -152,7 +138,7 @@ func resourceSentryProjectCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	d.SetId(proj.Slug)
-	return resourceSentryProjectRead(d, meta)
+	return resourceSentryProjectUpdate(d, meta)
 }
 
 func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
@@ -179,8 +165,6 @@ func resourceSentryProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("status", proj.Status)
 	d.Set("digests_min_delay", proj.DigestsMinDelay)
 	d.Set("digests_max_delay", proj.DigestsMaxDelay)
-	d.Set("allowed_domains", proj.AllowedDomains)
-	d.Set("grouping_enhancements", proj.GroupingEnhancements)
 	d.Set("resolve_age", proj.ResolveAge)
 
 	// TODO: Project options
@@ -211,17 +195,6 @@ func resourceSentryProjectUpdate(d *schema.ResourceData, meta interface{}) error
 		params.DigestsMaxDelay = Int(v.(int))
 	}
 
-	allowedDomains := []string{}
-	for _, url := range d.Get("allowed_domains").([]interface{}) {
-		allowedDomains = append(allowedDomains, url.(string))
-	}
-	if len(allowedDomains) > 0 {
-		params.AllowedDomains = allowedDomains
-	}
-
-	if v, ok := d.GetOk("grouping_enhancements"); ok {
-		params.GroupingEnhancements = v.(string)
-	}
 	if v, ok := d.GetOk("resolve_age"); ok {
 		params.ResolveAge = Int(v.(int))
 	}

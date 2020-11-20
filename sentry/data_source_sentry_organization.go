@@ -1,8 +1,8 @@
 package sentry
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func dataSourceSentryOrganization() *schema.Resource {
@@ -28,7 +28,7 @@ func dataSourceSentryOrganization() *schema.Resource {
 }
 
 func dataSourceSentryOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*sentryclient.Client)
+	client := meta.(*sentry.Client)
 
 	slug := d.Get("slug").(string)
 

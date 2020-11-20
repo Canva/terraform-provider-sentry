@@ -1,8 +1,8 @@
 package sentry
 
 import (
-	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func resourceSentryKey() *schema.Resource {
@@ -48,16 +48,14 @@ func resourceSentryKey() *schema.Resource {
 				Computed: true,
 			},
 			"rate_limit_window": {
-				Type:        schema.TypeInt,
-				Description: "time window in second for rate_limit_count",
-				Optional:    true,
-				Computed:    true,
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
 			},
 			"rate_limit_count": {
-				Type:        schema.TypeInt,
-				Description: "rate limit for the key in rate_limit_window time",
-				Optional:    true,
-				Computed:    true,
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
 			},
 			"dsn_secret": {
 				Type:     schema.TypeString,
@@ -82,7 +80,7 @@ func resourceSentryKeyCreate(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	params := &sentryclient.CreateProjectKeyParams{
 		Name: d.Get("name").(string),
-		RateLimit: &sentryclient.ProjectKeyRateLimit{
+		RateLimit: &sentry.ProjectKeyRateLimit{
 			Window: d.Get("rate_limit_window").(int),
 			Count:  d.Get("rate_limit_count").(int),
 		},
@@ -151,7 +149,7 @@ func resourceSentryKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 	project := d.Get("project").(string)
 	params := &sentryclient.UpdateProjectKeyParams{
 		Name: d.Get("name").(string),
-		RateLimit: &sentryclient.ProjectKeyRateLimit{
+		RateLimit: &sentry.ProjectKeyRateLimit{
 			Window: d.Get("rate_limit_window").(int),
 			Count:  d.Get("rate_limit_count").(int),
 		},

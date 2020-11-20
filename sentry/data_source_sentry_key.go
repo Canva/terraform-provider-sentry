@@ -3,9 +3,10 @@ package sentry
 import (
 	"fmt"
 	"log"
+	"sort"
 
-	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func dataSourceSentryKey() *schema.Resource {
@@ -106,6 +107,11 @@ func dataSourceSentryKeyRead(d *schema.ResourceData, meta interface{}) error {
 	first := d.Get("first").(bool)
 	log.Printf("[DEBUG] sentry_key - multiple results found and `first` is set to: %t", first)
 	if first {
+		// Sort keys by date created
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].DateCreated.Before(keys[j].DateCreated)
+		})
+
 		return sentryKeyAttributes(d, &keys[0])
 	}
 

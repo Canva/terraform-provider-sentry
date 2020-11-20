@@ -6,10 +6,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/canva/terraform-provider-sentry/sentryclient"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/jianyuan/go-sentry/sentry"
 )
 
 func TestAccSentryProject_basic(t *testing.T) {
@@ -25,13 +25,11 @@ func TestAccSentryProject_basic(t *testing.T) {
 	  }
 
 	  resource "sentry_project" "test_project" {
-		organization = "%s"
-		team = "${sentry_team.test_team.id}"
-		name = "Test project changed"
-		slug = "%s"
-		allowed_domains = ["www.canva.com", "www.canva.cn"]
-		grouping_enhancements = "function:panic_handler      ^-group"
-		platform = "go"
+	    organization = "%s"
+	    team = "${sentry_team.test_team.id}"
+	    name = "Test project changed"
+	    slug = "%s"
+	    platform = "go"
 	  }
 	`, testOrganization, testOrganization, newProjectSlug)
 
@@ -45,12 +43,10 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:                 "Test project",
-						Organization:         testOrganization,
-						Team:                 "Test team",
-						SlugPresent:          true,
-						AllowedDomains:       []string{"*"},
-						GroupingEnhancements: "",
+						Name:         "Test project",
+						Organization: testOrganization,
+						Team:         "Test team",
+						SlugPresent:  true,
 						Platform:     "go",
 					}),
 				),
@@ -60,12 +56,10 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryProjectExists("sentry_project.test_project", &project),
 					testAccCheckSentryProjectAttributes(&project, &testAccSentryProjectExpectedAttributes{
-						Name:                 "Test project changed",
-						Organization:         testOrganization,
-						Team:                 "Test team",
-						Slug:                 newProjectSlug,
-						AllowedDomains:       []string{"www.canva.com", "www.canva.cn"},
-						GroupingEnhancements: "function:panic_handler      ^-group",
+						Name:         "Test project changed",
+						Organization: testOrganization,
+						Team:         "Test team",
+						Slug:         newProjectSlug,
 						Platform:     "go",
 					}),
 				),
@@ -168,6 +162,9 @@ type testAccSentryProjectExpectedAttributes struct {
 	AllowedDomains       []string
 	Platform    string
 
+	SlugPresent bool
+	Slug        string
+	Platform    string
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {
@@ -192,22 +189,6 @@ func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testA
 			return fmt.Errorf("got slug %q; want %q", proj.Slug, want.Slug)
 		}
 
-		if want.GroupingEnhancements != "" && proj.GroupingEnhancements != want.GroupingEnhancements {
-			return fmt.Errorf("got GroupingEnhancements %q; want %q", proj.GroupingEnhancements, want.GroupingEnhancements)
-		}
-
-		if len(want.AllowedDomains) == len(proj.AllowedDomains) {
-			sort.Strings(want.AllowedDomains)
-			sort.Strings(proj.AllowedDomains)
-			for index := range want.AllowedDomains {
-				if want.AllowedDomains[index] != proj.AllowedDomains[index] {
-					return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
-				}
-			}
-		} else {
-			return fmt.Errorf("want: %v, get: %v", want.AllowedDomains, proj.AllowedDomains)
-		}
-
 		if want.Platform != "" && proj.Platform != want.Platform {
 			return fmt.Errorf("got Platform %q; want %q", proj.Platform, want.Platform)
 		}
@@ -223,24 +204,10 @@ var testAccSentryProjectConfig = fmt.Sprintf(`
   }
 
   resource "sentry_project" "test_project" {
-	organization = "%s"
-	team = "${sentry_team.test_team.id}"
-	name = "Test project"
-	platform = "go"
-  }
-`, testOrganization, testOrganization)
-
-var testAccSentryProjectRemoveKeyConfig = fmt.Sprintf(`
-  resource "sentry_team" "test_team" {
-	organization = "%s"
-	name = "Test team"
-  }
-
-  resource "sentry_project" "test_project_remove_key" {
-	organization = "%s"
-	team = "${sentry_team.test_team.id}"
-	name = "Test project"
-	remove_default_key = true
+    organization = "%s"
+    team = "${sentry_team.test_team.id}"
+    name = "Test project"
+    platform = "go"
   }
 `, testOrganization, testOrganization)
 

@@ -3,7 +3,7 @@ package sentry
 import (
 	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Bool returns a pointer to the bool value.
@@ -23,7 +23,7 @@ func Int(v int) *int {
 // `false`, `err` => encountered an unexpected error
 func checkClientGet(resp *http.Response, err error, d *schema.ResourceData) (bool, error) {
 	if err != nil {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			d.SetId("")
 			return false, nil
 		}
