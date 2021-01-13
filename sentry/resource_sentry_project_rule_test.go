@@ -6,16 +6,15 @@ import (
 	"testing"
 
 	"github.com/canva/terraform-provider-sentry/sentryclient"
+	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/google/go-cmp/cmp"
 )
 
 const projectSlug = "test-project"
 
 func TestAccSentryRule_basic(t *testing.T) {
 	var rule sentryclient.Rule
-
 
 	testAccSentryRuleUpdateConfig := fmt.Sprintf(`
 	resource "sentry_rule" "test_rule" {
@@ -34,13 +33,13 @@ func TestAccSentryRule_basic(t *testing.T) {
 			{
 				id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
 				value = 101
-				name = "An issue is seen more than 101 times in 1h"
+				name = "The issue is seen more than 101 times in 1h"
 				interval = "1h"
 		 	},
 		 	{
 				id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 				interval = "1m"
-				name = "An issue is seen by more than 30 users in 1 minute"
+				name = "The issue is seen by more than 30 users in 1 minute"
 				value = 30
 		 	}
 		]
@@ -57,28 +56,28 @@ func TestAccSentryRule_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
 					testAccCheckSentryRuleAttributes(&rule, &testAccSentryRuleExpectedAttributes{
-						Name: "Important Issue",
+						Name:        "Important Issue",
 						ActionMatch: "all",
-						Frequency: 1440,
+						Frequency:   1440,
 						Environment: "prod",
 						Actions: []sentryclient.RuleAction{
 							{
-								ID: "sentry.rules.actions.notify_event.NotifyEventAction",
-								Name: "Send a notification (for all legacy integrations)",  // Default name added by Sentry
+								ID:   "sentry.rules.actions.notify_event.NotifyEventAction",
+								Name: "Send a notification (for all legacy integrations)", // Default name added by Sentry
 							},
 						},
 						Conditions: []sentryclient.RuleCondition{
 							{
-								ID: "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
-								Value: 100,
-								Name: "An issue is seen more than 100 times in 1m",
+								ID:       "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+								Value:    100,
+								Name:     "The issue is seen more than 100 times in 1m",
 								Interval: "1m",
 							},
 							{
-								ID: "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
+								ID:       "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
 								Interval: "1m",
-								Name: "An issue is seen by more than 25 users in 1m",
-								Value: 25,
+								Name:     "The issue is seen by more than 25 users in 1m",
+								Value:    25,
 							},
 						},
 					}),
@@ -89,28 +88,28 @@ func TestAccSentryRule_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryRuleExists("sentry_rule.test_rule", &rule, testOrganization, projectSlug),
 					testAccCheckSentryRuleAttributes(&rule, &testAccSentryRuleExpectedAttributes{
-						Name: "Important Issue",
+						Name:        "Important Issue",
 						ActionMatch: "all",
-						Frequency: 1300,
+						Frequency:   1300,
 						Environment: "prod",
 						Actions: []sentryclient.RuleAction{
 							{
-								ID: "sentry.rules.actions.notify_event.NotifyEventAction",
-								Name: "Send a notification (for all legacy integrations)",  // Default name added by Sentry
+								ID:   "sentry.rules.actions.notify_event.NotifyEventAction",
+								Name: "Send a notification (for all legacy integrations)", // Default name added by Sentry
 							},
 						},
 						Conditions: []sentryclient.RuleCondition{
 							{
-								ID: "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
-								Value: 101,
-								Name: "An issue is seen more than 101 times in 1h",
+								ID:       "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+								Value:    101,
+								Name:     "The issue is seen more than 101 times in 1h",
 								Interval: "1h",
 							},
 							{
-								ID: "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
+								ID:       "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
 								Interval: "1m",
-								Name: "An issue is seen by more than 30 users in 1m",
-								Value: 30,
+								Name:     "The issue is seen by more than 30 users in 1m",
+								Value:    30,
 							},
 						},
 					}),
@@ -127,7 +126,6 @@ func testAccCheckSentryRuleDestroy(s *terraform.State) error {
 		if rs.Type != "sentry_rule" {
 			continue
 		}
-
 
 		rules, resp, err := client.Rules.List(rs.Primary.Attributes["organization"], projectSlug)
 		var rule *sentryclient.Rule
@@ -191,13 +189,11 @@ type testAccSentryRuleExpectedAttributes struct {
 	// Organization string
 	// Project string
 	ActionMatch string
-	Frequency int
+	Frequency   int
 	Environment string
-	Actions []sentryclient.RuleAction
-	Conditions []sentryclient.RuleCondition
+	Actions     []sentryclient.RuleAction
+	Conditions  []sentryclient.RuleCondition
 }
-
-
 
 func testAccCheckSentryRuleAttributes(rule *sentryclient.Rule, want *testAccSentryRuleExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -217,18 +213,17 @@ func testAccCheckSentryRuleAttributes(rule *sentryclient.Rule, want *testAccSent
 			return fmt.Errorf("got environment %s; want %s", rule.Environment, want.Environment)
 		}
 
-		if !cmp.Equal(rule.Actions, want.Actions){
-			return fmt.Errorf("got actions: %+v\n; want %+v\n", rule.Actions, want.Actions)	
+		if !cmp.Equal(rule.Actions, want.Actions) {
+			return fmt.Errorf("got actions: %+v\n; want %+v\n", rule.Actions, want.Actions)
 		}
 
-		if !cmp.Equal(rule.Conditions, want.Conditions){
-			return fmt.Errorf("got conditions: %+v\n; want %+v\n", rule.Conditions, want.Conditions)	
+		if !cmp.Equal(rule.Conditions, want.Conditions) {
+			return fmt.Errorf("got conditions: %+v\n; want %+v\n", rule.Conditions, want.Conditions)
 		}
 
 		return nil
 	}
 }
-
 
 var testAccSentryRuleConfig = fmt.Sprintf(`
 resource "sentry_rule" "test_rule" {
@@ -247,13 +242,13 @@ resource "sentry_rule" "test_rule" {
 		{
 			id = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
 			value = 100
-			name = "An issue is seen more than 100 times in 1m"
+			name = "The issue is seen more than 100 times in 1m"
 			interval = "1m"
 	 	},
 	 	{
 			id = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 			interval = "1m"
-			name = "An issue is seen by more than 25 users in 1m"
+			name = "The issue is seen by more than 25 users in 1m"
 			value = 25
 	 	}
 	]
