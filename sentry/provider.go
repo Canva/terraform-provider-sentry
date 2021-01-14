@@ -30,6 +30,7 @@ func Provider() terraform.ResourceProvider {
 			"sentry_key":          resourceSentryKey(),
 			"sentry_plugin":       resourceSentryPlugin(),
 			"sentry_rule":         resourceSentryRule(),
+			"sentry_filter":       resourceSentryFilter(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

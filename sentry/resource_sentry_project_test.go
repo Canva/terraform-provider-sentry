@@ -51,7 +51,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 						SlugPresent:          true,
 						AllowedDomains:       []string{"*"},
 						GroupingEnhancements: "",
-						Platform:     "go",
+						Platform:             "go",
 					}),
 				),
 			},
@@ -66,7 +66,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 						Slug:                 newProjectSlug,
 						AllowedDomains:       []string{"www.canva.com", "www.canva.cn"},
 						GroupingEnhancements: "function:panic_handler      ^-group",
-						Platform:     "go",
+						Platform:             "go",
 					}),
 				),
 			},
@@ -159,15 +159,14 @@ func testAccCheckSentryRuleRemoved(n string) resource.TestCheckFunc {
 }
 
 type testAccSentryProjectExpectedAttributes struct {
-	Name         string
-	Organization string
-	Team         string
+	Name                 string
+	Organization         string
+	Team                 string
 	SlugPresent          bool
 	Slug                 string
 	GroupingEnhancements string
 	AllowedDomains       []string
-	Platform    string
-
+	Platform             string
 }
 
 func testAccCheckSentryProjectAttributes(proj *sentryclient.Project, want *testAccSentryProjectExpectedAttributes) resource.TestCheckFunc {

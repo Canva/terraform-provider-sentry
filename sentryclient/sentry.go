@@ -20,6 +20,7 @@ type Client struct {
 	Projects       *ProjectService
 	ProjectKeys    *ProjectKeyService
 	ProjectPlugins *ProjectPluginService
+	ProjectFilter  *ProjectFilterService
 	Rules          *RuleService
 }
 
@@ -49,6 +50,7 @@ func NewClient(httpClient *http.Client, baseURL *url.URL, token string) *Client 
 		Projects:       newProjectService(base.New()),
 		ProjectKeys:    newProjectKeyService(base.New()),
 		ProjectPlugins: newProjectPluginService(base.New()),
+		ProjectFilter:  newProjectFilterService(base.New()),
 		Rules:          newRuleService(base.New()),
 	}
 	return c
