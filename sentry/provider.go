@@ -1,21 +1,22 @@
 package sentry
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Provider returns a terraform.ResourceProvider.
-func Provider() terraform.ResourceProvider {
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"token": &schema.Schema{
+			"token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("SENTRY_TOKEN", nil),
 				Description: "The authentication token used to connect to Sentry",
 			},
-			"base_url": &schema.Schema{
+			"base_url": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("SENTRY_BASE_URL", "https://app.getsentry.com/api/"),
@@ -38,15 +39,20 @@ func Provider() terraform.ResourceProvider {
 			"sentry_organization": dataSourceSentryOrganization(),
 		},
 
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := Config{
 		Token:   d.Get("token").(string),
 		BaseURL: d.Get("base_url").(string),
 	}
 
-	return config.Client()
+	client, err := config.Client()
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	return client, nil
 }
