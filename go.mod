@@ -11,7 +11,7 @@ go 1.18
 require (
 	github.com/google/go-cmp v0.5.7
 	github.com/hashicorp/terraform-plugin-log v0.3.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.13.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.10.1
 	github.com/jianyuan/go-sentry v1.2.1-0.20201022193837-4bc7bd117d9d
 	github.com/jianyuan/terraform-provider-sentry v0.7.0
 	github.com/mitchellh/mapstructure v1.4.3
@@ -38,7 +38,7 @@ require (
 	github.com/hashicorp/hc-install v0.3.1 // indirect
 	github.com/hashicorp/hcl/v2 v2.11.1 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/terraform-exec v0.16.0 // indirect
+	github.com/hashicorp/terraform-exec v0.15.0 // indirect
 	github.com/hashicorp/terraform-json v0.13.0 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.8.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.0.0-20210816115301-cb2034eba045 // indirect
