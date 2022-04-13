@@ -1,4 +1,4 @@
-module github.com/canva/terraform-provider-sentry/sentr
+module github.com/canva/terraform-provider-sentry/sentry
 
 go 1.18
 
