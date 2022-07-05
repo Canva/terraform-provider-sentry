@@ -7,10 +7,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/canva/go-sentry/sentry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
 func TestAccSentryOrganization_basic(t *testing.T) {

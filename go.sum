@@ -73,6 +73,8 @@ github.com/canva/go-sentry v1.3.0 h1:RBKWhtFodfFU9PkqzRgKaduUzTN2ufIP4VoaY7vpNYk
 github.com/canva/go-sentry v1.3.0/go.mod h1:GqazTLK0IXe4tAetNi049FhfLIxzEij8cgiH9yA0qhk=
 github.com/canva/go-sentry v1.3.1-0.20220704233828-e92b7d312b5b h1:PQkpXxRIgcowcKikXZLSOeyQfJrNmAIGI76xdOMs81I=
 github.com/canva/go-sentry v1.3.1-0.20220704233828-e92b7d312b5b/go.mod h1:B2sP4gGg/R6gdfVr9RtZ/9R7L0gFGKieOfAAjlDyqiA=
+github.com/canva/go-sentry v1.4.0 h1:8IRCER08aG13SYwkC/Ards0cfbf4UW1iG5EXiFOKbvA=
+github.com/canva/go-sentry v1.4.0/go.mod h1:B2sP4gGg/R6gdfVr9RtZ/9R7L0gFGKieOfAAjlDyqiA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=

@@ -44,12 +44,12 @@ func NewProvider(version string) func() *schema.Provider {
 				"sentry_plugin":       resourceSentryPlugin(),
 				"sentry_project":      resourceSentryProject(),
 				"sentry_rule":         resourceSentryRule(),
+				"sentry_filter":       resourceSentryFilter(),
 				"sentry_team":         resourceSentryTeam(),
 			},
 
 			DataSourcesMap: map[string]*schema.Resource{
 				"sentry_dashboard":    dataSourceSentryDashboard(),
-        "sentry_filter":       resourceSentryFilter(),
 				"sentry_issue_alert":  dataSourceSentryIssueAlertSentryIssueAlert(),
 				"sentry_key":          dataSourceSentryKey(),
 				"sentry_metric_alert": dataSourceSentryMetricAlert(),

@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/canva/go-sentry/sentry"
-	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -94,12 +92,12 @@ func TestAccSentryProject_changeTeam(t *testing.T) {
 				Check:  check(teamName2, projectName),
 			},
 			{
-				Config: testAccSentryProjectRemoveKeyConfig,
-				Check:  testAccCheckSentryKeyRemoved("sentry_project.test_project_remove_key"),
+				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_1"),
+				Check:  check(teamName1, teamName2),
 			},
 			{
-				Config: testAccSentryProjectRemoveRuleConfig,
-				Check:  testAccCheckSentryRuleRemoved("sentry_project.test_project_remove_rule"),
+				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_2"),
+				Check:  check(teamName2, projectName),
 			},
 		},
 	})

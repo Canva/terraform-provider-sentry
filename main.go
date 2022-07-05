@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/canva/terraform-provider-sentry/sentry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
