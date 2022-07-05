@@ -51,6 +51,9 @@ func TestAccSentryProject_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateIdFunc: testAccSentryProjectImportStateIdFunc(rn),
 				ImportStateVerify: true,
+				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
+				// we will ignore them for now.
+				ImportStateVerifyIgnore: []string{"allowed_domains", "remove_default_key", "remove_default_rule"},
 			},
 		},
 	})
@@ -167,10 +170,11 @@ func testAccSentryProjectImportStateIdFunc(n string) resource.ImportStateIdFunc 
 func testAccSentryProjectConfig(teamName, projectName string) string {
 	return testAccSentryTeamConfig(teamName) + fmt.Sprintf(`
 resource "sentry_project" "test" {
-	organization = sentry_team.test.organization
-	team         = sentry_team.test.slug
-	name         = "%[1]s"
-	platform     = "go"
+	organization    = sentry_team.test.organization
+	team            = sentry_team.test.slug
+	name            = "%[1]s"
+	platform        = "go"
+	allowed_domains = ["www.test2.com", "www.test.com", "www.yourapp.com"]
 }
 	`, projectName)
 }
@@ -190,10 +194,11 @@ resource "sentry_team" "test_2" {
 }
 
 resource "sentry_project" "test" {
-	organization = sentry_team.%[4]s.organization
-	team         = sentry_team.%[4]s.slug
-	name         = "%[3]s"
-	platform     = "go"
+	organization    = sentry_team.%[4]s.organization
+	team            = sentry_team.%[4]s.slug
+	name            = "%[3]s"
+	platform        = "go"
+	allowed_domains = ["www.test2.com", "www.test.com", "www.yourapp.com"]
 }
 	`, teamName1, teamName2, projectName, teamResourceName)
 }

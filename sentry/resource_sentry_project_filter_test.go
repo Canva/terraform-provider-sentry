@@ -1,18 +1,23 @@
 package sentry
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/canva/go-sentry/sentry"
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccSentryProjectFilter_basic(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
 	var filterConfig sentry.FilterConfig
 
 	resource.Test(t, resource.TestCase{
@@ -21,7 +26,7 @@ func TestAccSentryProjectFilter_basic(t *testing.T) {
 		CheckDestroy: testAccCheckSentryProjectFilterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSentryProjectFilterConfig,
+				Config: testAccSentryProjectFilterConfig(teamName, projectName),
 				Check:  testFilterConfig("sentry_filter.test_filter", &filterConfig, true, []string{"ie_pre_9", "ie10"}),
 			},
 		},
@@ -32,17 +37,22 @@ func testAccCheckSentryProjectFilterDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*sentry.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(testOrganization, rs.Primary.Attributes["project"])
+		if rs.Type != "sentry_filter" {
+			continue
+		}
+
+		ctx := context.Background()
+		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(ctx, testOrganization, rs.Primary.Attributes["project"])
+		// We should not be able to reach https://[API]/[PROJECT]/filters since it should be deleted at this point.
+		// TODO: Don't error out in `go-sentry.ProjectFilter.GetFilterConfig` if the project or rule does not exist.
+		if strings.Contains(err.Error(), "The requested resource does not exist") {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
-		if filterConfig.BrowserExtension != false {
-			return fmt.Errorf("got browser_extension %t; want false", filterConfig.BrowserExtension)
-		}
-		if len(filterConfig.LegacyBrowsers) != 0 {
-			return fmt.Errorf("got legacy_browser %v; want []", filterConfig.LegacyBrowsers)
-		}
-		return nil
+
+		return fmt.Errorf("Received a sentry_filter, but it should have been deleted. Filter: %v", filterConfig)
 	}
 
 	return nil
@@ -59,8 +69,9 @@ func testFilterConfig(n string, filterConfig *sentry.FilterConfig, browserExtens
 			return errors.New("No project ID is set")
 		}
 
+		ctx := context.Background()
 		client := testAccProvider.Meta().(*sentry.Client)
-		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(testOrganization, rs.Primary.Attributes["project"])
+		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(ctx, testOrganization, rs.Primary.Attributes["project"])
 		if err != nil {
 			return err
 		}
@@ -79,23 +90,13 @@ func testFilterConfig(n string, filterConfig *sentry.FilterConfig, browserExtens
 	}
 }
 
-var testAccSentryProjectFilterConfig = fmt.Sprintf(`
-resource "sentry_team" "test_team" {
-	organization = "%s"
-	name         = "Test team"
-}
-
-resource "sentry_project" "test_project" {
-	organization = "%s"
-	team         = sentry_team.test_team.id
-	name         = "Test project"
-	platform     = "go"
-}
-
+func testAccSentryProjectFilterConfig(teamName string, projectName string) string {
+	return testAccSentryProjectConfig(teamName, projectName) + fmt.Sprintf(`
 resource "sentry_filter" "test_filter" {
 	organization = "%s"
-	project = sentry_project.test_project.id
+	project = sentry_project.test.id
 	browser_extension = true
-	legacy_browsers = ["ie_pre_9","ie10"]
+  legacy_browsers = ["ie_pre_9","ie10"]
 }
-`, testOrganization, testOrganization, testOrganization)
+`, testOrganization)
+}
