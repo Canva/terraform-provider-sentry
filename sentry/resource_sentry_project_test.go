@@ -94,14 +94,6 @@ func TestAccSentryProject_changeTeam(t *testing.T) {
 				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_2"),
 				Check:  check(teamName2, projectName),
 			},
-			{
-				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_1"),
-				Check:  check(teamName1, teamName2),
-			},
-			{
-				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_2"),
-				Check:  check(teamName2, projectName),
-			},
 		},
 	})
 }
