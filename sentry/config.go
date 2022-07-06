@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/canva/go-sentry/sentry"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/jianyuan/go-sentry/v2/sentry"
 	"golang.org/x/oauth2"
 )
 

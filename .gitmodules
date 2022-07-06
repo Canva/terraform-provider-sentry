@@ -1,3 +1,0 @@
-[submodule "sentryclient"]
-	path = sentryclient
-	url = org-2562356@github.com:Canva/go-sentry.git
