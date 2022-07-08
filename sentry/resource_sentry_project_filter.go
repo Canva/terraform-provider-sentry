@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/canva/go-sentry/sentry"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
 func resourceSentryFilter() *schema.Resource {
@@ -17,7 +17,7 @@ func resourceSentryFilter() *schema.Resource {
 		UpdateContext: resourceSentryFilterUpdate,
 		DeleteContext: resourceSentryFilterDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: resourceSentryFilterImporter,
+			StateContext: importOrganizationProjectAndID,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -37,7 +37,7 @@ func resourceSentryFilter() *schema.Resource {
 				Description: "Whether to filter out events from browser extension",
 			},
 			"legacy_browsers": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Description: "Events from these legacy browsers will be ignored",
 				Elem: &schema.Schema{
@@ -59,7 +59,7 @@ func resourceSentryFilterRead(ctx context.Context, d *schema.ResourceData, meta 
 	project := d.Get("project").(string)
 
 	tflog.Debug(ctx, "Reading Sentry filter config", map[string]interface{}{"org": org, "project": project})
-	filterConfig, resp, err := client.ProjectFilter.GetFilterConfig(org, project)
+	filterConfig, resp, err := client.ProjectFilter.GetFilterConfig(ctx, org, project)
 	if found, err := checkClientGet(resp, err, d); !found {
 		return diag.FromErr(err)
 	}
@@ -79,18 +79,15 @@ func resourceSentryFilterUpdate(ctx context.Context, d *schema.ResourceData, met
 	project := d.Get("project").(string)
 
 	browserExtension := d.Get("browser_extension").(bool)
-	inputLegacyBrowsers := d.Get("legacy_browsers").([]interface{})
-	legacyBrowsers := make([]string, len(inputLegacyBrowsers))
-	for idx, browser := range inputLegacyBrowsers {
-		legacyBrowsers[idx] = browser.(string)
-	}
+	inputLegacyBrowsers := d.Get("legacy_browsers").(*schema.Set).List()
+	legacyBrowsers := expandStringList(inputLegacyBrowsers)
 
 	tflog.Debug(ctx, "Updating Sentry filters browser extensions and legacy browser", map[string]interface{}{"org": org, "project": project})
-	_, err := client.ProjectFilter.UpdateBrowserExtensions(org, project, browserExtension)
+	_, err := client.ProjectFilter.UpdateBrowserExtensions(ctx, org, project, browserExtension)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.ProjectFilter.UpdateLegacyBrowser(org, project, legacyBrowsers)
+	_, err = client.ProjectFilter.UpdateLegacyBrowser(ctx, org, project, legacyBrowsers)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -106,11 +103,11 @@ func resourceSentryFilterDelete(ctx context.Context, d *schema.ResourceData, met
 	project := d.Get("project").(string)
 
 	tflog.Debug(ctx, "Deleting Sentry filters browser extensions and legacy browser", map[string]interface{}{"org": org, "project": project})
-	_, err := client.ProjectFilter.UpdateBrowserExtensions(org, project, false)
+	_, err := client.ProjectFilter.UpdateBrowserExtensions(ctx, org, project, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, err = client.ProjectFilter.UpdateLegacyBrowser(org, project, []string{})
+	_, err = client.ProjectFilter.UpdateLegacyBrowser(ctx, org, project, []string{})
 	if err != nil {
 		return diag.FromErr(err)
 	}
