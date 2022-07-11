@@ -296,22 +296,21 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 
-		if oldTeams != nil {
-			tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
-				"org":           org,
-				"project":       project,
-				"teamsToRemove": oldTeams,
-			})
+		tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
+			"org":           org,
+			"project":       project,
+			"teamsToRemove": oldTeams,
+		})
 
-			for oldTeam := range oldTeams {
-				resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
-				if err != nil {
-					if resp.Response.StatusCode != http.StatusNotFound {
-						return diag.FromErr(err)
-					}
+		for oldTeam := range oldTeams {
+			resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
+			if err != nil {
+				if resp.Response.StatusCode != http.StatusNotFound {
+					return diag.FromErr(err)
 				}
 			}
 		}
+
 		return nil
 	}
 
