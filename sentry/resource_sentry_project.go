@@ -283,37 +283,6 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(proj.Slug)
 
-	setTeams := func(oldTeams map[string]bool, newTeams map[string]bool) diag.Diagnostics {
-		tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
-			"org":        org,
-			"project":    project,
-			"teamsToAdd": newTeams,
-		})
-		for newTeam := range newTeams {
-			_, _, err = client.Projects.AddTeam(ctx, org, project, newTeam)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-		}
-
-		tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
-			"org":           org,
-			"project":       project,
-			"teamsToRemove": oldTeams,
-		})
-
-		for oldTeam := range oldTeams {
-			resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
-			if err != nil {
-				if resp.Response.StatusCode != http.StatusNotFound {
-					return diag.FromErr(err)
-				}
-			}
-		}
-
-		return nil
-	}
-
 	oldTeams := map[string]bool{}
 	newTeams := map[string]bool{}
 	if d.HasChange("team") {
@@ -340,15 +309,39 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	// Ensure old teams and new teams do not overlap.
 	for newTeam := range newTeams {
 		if oldTeams[newTeam] {
 			delete(oldTeams, newTeam)
 		}
 	}
 
-	diagnostics := setTeams(oldTeams, newTeams)
-	if diagnostics != nil {
-		return diagnostics
+	tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
+		"org":        org,
+		"project":    project,
+		"teamsToAdd": newTeams,
+	})
+
+	for newTeam := range newTeams {
+		_, _, err = client.Projects.AddTeam(ctx, org, project, newTeam)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
+		"org":           org,
+		"project":       project,
+		"teamsToRemove": oldTeams,
+	})
+
+	for oldTeam := range oldTeams {
+		resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
+		if err != nil {
+			if resp.Response.StatusCode != http.StatusNotFound {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	return resourceSentryProjectRead(ctx, d, meta)
