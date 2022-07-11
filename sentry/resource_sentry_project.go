@@ -31,9 +31,19 @@ func resourceSentryProject() *schema.Resource {
 				Required:    true,
 			},
 			"team": {
-				Description: "The slug of the team to create the project for.",
+				Description: "The slug of the team to create the project for. One of 'team' or 'teams' must be set.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Deprecated:  "To be replaced by 'teams' in a future release.",
+				Optional:    true,
+			},
+			"teams": {
+				Description: "The slugs of the teams to create the project for. One of 'team' or 'teams' must be set.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ExactlyOneOf: []string{"team"},
+				Optional:     true,
 			},
 			"name": {
 				Description: "The name for the project.",
@@ -115,14 +125,20 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 	org := d.Get("organization").(string)
 	team := d.Get("team").(string)
+	var teams []interface{}
+	if team == "" {
+		teams = d.Get("teams").(*schema.Set).List()
+		team = teams[0].(string)
+	}
 	params := &sentry.CreateProjectParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
 	}
 
 	tflog.Debug(ctx, "Creating Sentry project", map[string]interface{}{
-		"teamName": team,
-		"org":      org,
+		"team":  team,
+		"teams": teams,
+		"org":   org,
 	})
 	proj, _, err := client.Projects.Create(ctx, org, team, params)
 	if err != nil {
@@ -159,12 +175,31 @@ func resourceSentryProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		"org":         org,
 	})
 
+	setTeams := func() error {
+		if len(proj.Teams) <= 1 || proj.Teams == nil {
+			return multierror.Append(
+				d.Set("team", proj.Team.Slug),
+				d.Set("teams", nil),
+			)
+		}
+
+		teams := make([]string, len(proj.Teams))
+		for i, team := range proj.Teams {
+			teams[i] = *team.Slug
+		}
+
+		return multierror.Append(
+			d.Set("team", nil),
+			d.Set("teams", teams),
+		)
+	}
+
 	d.SetId(proj.Slug)
 	retErr := multierror.Append(
 		d.Set("organization", proj.Organization.Slug),
-		d.Set("team", proj.Team.Slug),
 		d.Set("name", proj.Name),
 		d.Set("slug", proj.Slug),
+		setTeams(),
 		d.Set("platform", proj.Platform),
 		d.Set("internal_id", proj.ID),
 		d.Set("is_public", proj.IsPublic),
@@ -220,32 +255,73 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(proj.Slug)
 
-	if d.HasChange("team") {
-		o, n := d.GetChange("team")
-
-		tflog.Debug(ctx, "Adding team to project", map[string]interface{}{
+	setTeams := func(o map[string]bool, n map[string]bool) diag.Diagnostics {
+		tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
 			"org":     org,
 			"project": project,
-			"team":    n,
+			"teams":   n,
 		})
-		_, _, err = client.Projects.AddTeam(ctx, org, project, n.(string))
-		if err != nil {
-			return diag.FromErr(err)
+		for team := range n {
+			_, _, err = client.Projects.AddTeam(ctx, org, project, team)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
-		if o := o.(string); o != "" {
-			tflog.Debug(ctx, "Removing team from project", map[string]interface{}{
+		if o != nil {
+			tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
 				"org":     org,
 				"project": project,
-				"team":    o,
+				"teams":   o,
 			})
-			resp, err := client.Projects.RemoveTeam(ctx, org, project, o)
-			if err != nil {
-				if resp.Response.StatusCode != http.StatusNotFound {
-					return diag.FromErr(err)
+
+			for team := range o {
+				resp, err := client.Projects.RemoveTeam(ctx, org, project, team)
+				if err != nil {
+					if resp.Response.StatusCode != http.StatusNotFound {
+						return diag.FromErr(err)
+					}
 				}
 			}
 		}
+		return nil
+	}
+
+	oldTeams := map[string]bool{}
+	newTeams := map[string]bool{}
+	if d.HasChange("team") {
+		oldTeam, newTeam := d.GetChange("team")
+		if oldTeam.(string) != "" {
+			oldTeams[oldTeam.(string)] = true
+		}
+		if newTeam.(string) != "" {
+			newTeams[newTeam.(string)] = true
+		}
+	}
+
+	if d.HasChange("teams") {
+		o, n := d.GetChange("teams")
+		for _, oldTeam := range o.(*schema.Set).List() {
+			if oldTeam.(string) != "" {
+				oldTeams[oldTeam.(string)] = true
+			}
+		}
+		for _, newTeam := range n.(*schema.Set).List() {
+			if newTeam.(string) != "" {
+				newTeams[newTeam.(string)] = true
+			}
+		}
+	}
+
+	for newTeam := range newTeams {
+		if oldTeams[newTeam] {
+			delete(oldTeams, newTeam)
+		}
+	}
+
+	diagnostics := setTeams(oldTeams, newTeams)
+	if diagnostics != nil {
+		return diagnostics
 	}
 
 	return resourceSentryProjectRead(ctx, d, meta)
