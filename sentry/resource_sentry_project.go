@@ -130,7 +130,7 @@ func resourceSentryProject() *schema.Resource {
 				Default:     false,
 			},
 			"allowed_domains": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Computed:    true,
 				Description: "The domains allowed to be collected",
 				Optional:    true,
