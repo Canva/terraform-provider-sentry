@@ -283,28 +283,28 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(proj.Slug)
 
-	setTeams := func(o map[string]bool, n map[string]bool) diag.Diagnostics {
+	setTeams := func(oldTeams map[string]bool, newTeams map[string]bool) diag.Diagnostics {
 		tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
-			"org":     org,
-			"project": project,
-			"teams":   n,
+			"org":        org,
+			"project":    project,
+			"teamsToAdd": newTeams,
 		})
-		for team := range n {
-			_, _, err = client.Projects.AddTeam(ctx, org, project, team)
+		for newTeam := range newTeams {
+			_, _, err = client.Projects.AddTeam(ctx, org, project, newTeam)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 
-		if o != nil {
+		if oldTeams != nil {
 			tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
-				"org":     org,
-				"project": project,
-				"teams":   o,
+				"org":           org,
+				"project":       project,
+				"teamsToRemove": oldTeams,
 			})
 
-			for team := range o {
-				resp, err := client.Projects.RemoveTeam(ctx, org, project, team)
+			for oldTeam := range oldTeams {
+				resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
 				if err != nil {
 					if resp.Response.StatusCode != http.StatusNotFound {
 						return diag.FromErr(err)
