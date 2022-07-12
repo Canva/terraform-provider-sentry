@@ -206,7 +206,7 @@ func resourceSentryProjectRead(ctx context.Context, d *schema.ResourceData, meta
 	})
 
 	setTeams := func() error {
-		if len(proj.Teams) <= 1 || proj.Teams == nil {
+		if len(proj.Teams) <= 1 {
 			return multierror.Append(
 				d.Set("team", proj.Team.Slug),
 				d.Set("teams", nil),
@@ -285,15 +285,15 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(proj.Slug)
 
-	oldTeams := map[string]bool{}
-	newTeams := map[string]bool{}
+	oldTeams := map[string]struct{}{}
+	newTeams := map[string]struct{}{}
 	if d.HasChange("team") {
 		oldTeam, newTeam := d.GetChange("team")
 		if oldTeam.(string) != "" {
-			oldTeams[oldTeam.(string)] = true
+			oldTeams[oldTeam.(string)] = struct{}{}
 		}
 		if newTeam.(string) != "" {
-			newTeams[newTeam.(string)] = true
+			newTeams[newTeam.(string)] = struct{}{}
 		}
 	}
 
@@ -301,19 +301,19 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		o, n := d.GetChange("teams")
 		for _, oldTeam := range o.(*schema.Set).List() {
 			if oldTeam.(string) != "" {
-				oldTeams[oldTeam.(string)] = true
+				oldTeams[oldTeam.(string)] = struct{}{}
 			}
 		}
 		for _, newTeam := range n.(*schema.Set).List() {
 			if newTeam.(string) != "" {
-				newTeams[newTeam.(string)] = true
+				newTeams[newTeam.(string)] = struct{}{}
 			}
 		}
 	}
 
 	// Ensure old teams and new teams do not overlap.
 	for newTeam := range newTeams {
-		if oldTeams[newTeam] {
+		if _, exists := oldTeams[newTeam]; exists {
 			delete(oldTeams, newTeam)
 		}
 	}
