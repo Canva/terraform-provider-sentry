@@ -155,6 +155,8 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	team := d.Get("team").(string)
 	var teams []interface{}
 	if team == "" {
+		// Since `Set.List()` produces deterministic ordering, `teams[0]` should always
+		// resolve to the same value given the same `teams`.
 		teams = d.Get("teams").(*schema.Set).List()
 		team = teams[0].(string)
 	}
