@@ -63,6 +63,10 @@ resource "sentry_metric_alert" "copy" {
 - `organization` (String) The slug of the organization the metric alert belongs to.
 - `project` (String) The slug of the project the metric alert belongs to.
 
+### Optional
+
+- `comparison_delta` (Number) The number of minutes in the past to compare this metric to. For example, if our time window is 10 minutes, our trigger is a 10% increase in errors, and `comparison_delta = 10080`, we would trigger this metric if we experienced a 10% increase in errors compared to this time 1 week ago in 10 minute intervals.Omitting this field implies that the triggers are for static, rather than percentage change, triggers (e.g. alert when error count is over 1000  rather than alert when error count is 20% higher than this time `comparison_delta` minutes ago).
+
 ### Read-Only
 
 - `aggregate` (String)

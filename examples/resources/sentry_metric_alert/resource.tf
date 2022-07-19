@@ -6,6 +6,7 @@ resource "sentry_metric_alert" "main" {
   query             = ""
   aggregate         = "count()"
   time_window       = 60
+  comparison_delta  = 10080
   threshold_type    = 0
   resolve_threshold = 0
 

@@ -21,6 +21,7 @@ resource "sentry_metric_alert" "main" {
   query             = ""
   aggregate         = "count()"
   time_window       = 60
+  comparison_delta  = 10080
   threshold_type    = 0
   resolve_threshold = 0
 
@@ -59,6 +60,8 @@ resource "sentry_metric_alert" "main" {
 
 ### Optional
 
+- `comparison_delta` (Number) The number of minutes in the past to compare this metric to. For example, if our time window is 10 minutes, our trigger is a 10% increase in errors, and `comparison_delta = 10080`, we would trigger this metric if we experienced a 10% increase in errors compared to this time 1 week ago in 10 minute intervals.Omitting this field implies that the triggers are for static, rather than percentage change, triggers (e.g. alert when error count is over 1000  rather than alert when error count is 20% higher than this time `comparison_delta` minutes ago). 
+ Values must be one of: 5, 15, 60 (for one hour), 1440 (for one day), 10080 (for one week), or 43200 (for one month).
 - `dataset` (String) The Sentry Alert category
 - `environment` (String) Perform Alert rule in a specific environment
 - `owner` (String) Specifies the owner id of this Alert rule
