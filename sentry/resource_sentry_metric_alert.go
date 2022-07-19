@@ -382,9 +382,9 @@ func flattenMetricAlertTriggerActions(actions []*sentry.MetricAlertTriggerAction
 }
 
 func validateComparisonDelta(candidateComparisonDelta interface{}, attributePath cty.Path) diag.Diagnostics {
-	correctValues := []float64{5, 15, 60, 1440, 10080, 43200}
+	validComparisonDeltas := []float64{5, 15, 60, 1440, 10080, 43200}
 
-	for _, v := range correctValues {
+	for _, v := range validComparisonDeltas {
 		if candidateComparisonDelta == v {
 			return nil
 		}
@@ -393,5 +393,5 @@ func validateComparisonDelta(candidateComparisonDelta interface{}, attributePath
 	return diag.Errorf(
 		"Provided `comparison_delta` of \"%v\" is not one of the following valid choices \"%v\"",
 		candidateComparisonDelta,
-		correctValues)
+		validComparisonDeltas)
 }
