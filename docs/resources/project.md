@@ -33,15 +33,20 @@ resource "sentry_project" "default" {
 
 - `name` (String) The name for the project.
 - `organization` (String) The slug of the organization the project belongs to.
-- `team` (String) The slug of the team to create the project for.
 
 ### Optional
 
+- `allowed_domains` (Set of String) The domains allowed to be collected
 - `digests_max_delay` (Number) The maximum amount of time (in seconds) to wait between scheduling digests for delivery.
 - `digests_min_delay` (Number) The minimum amount of time (in seconds) to wait between scheduling digests for delivery after the initial scheduling.
+- `grouping_enhancements` (String) Grouping enhancements pattern
 - `platform` (String) The optional platform for this project.
+- `remove_default_key` (Boolean) Whether to remove the default key
+- `remove_default_rule` (Boolean) Whether to remove the default rule
 - `resolve_age` (Number) Hours in which an issue is automatically resolve if not seen after this amount of time.
 - `slug` (String) The optional slug for this project.
+- `team` (String, Deprecated) The slug of the team to create the project for. One of 'team' or 'teams' must be set.
+- `teams` (Set of String) The slugs of the teams to create the project for. One of 'team' or 'teams' must be set.
 
 ### Read-Only
 

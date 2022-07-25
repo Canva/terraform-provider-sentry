@@ -30,6 +30,16 @@ func dataSourceSentryMetricAlert() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"comparison_delta": {
+				Description: "The number of minutes in the past to compare this metric to. " +
+					"For example, if our time window is 10 minutes, our trigger is a 10% increase in errors, and `comparison_delta = 10080`, " +
+					"we would trigger this metric if we experienced a 10% increase in errors compared to this time 1 week ago in 10 minute intervals." +
+					"Omitting this field implies that the triggers are for static, rather than percentage change, triggers (e.g. alert when error count is over 1000 " +
+					" rather than alert when error count is 20% higher than this time `comparison_delta` minutes ago).",
+				Type:     schema.TypeFloat,
+				Optional: true,
+				Computed: true,
+			},
 			"name": {
 				Description: "The metric alert name.",
 				Type:        schema.TypeString,
@@ -150,6 +160,7 @@ func dataSourceSentryMetricAlertRead(ctx context.Context, d *schema.ResourceData
 		d.Set("threshold_type", alert.ThresholdType),
 		d.Set("resolve_threshold", alert.ResolveThreshold),
 		d.Set("owner", alert.Owner),
+		d.Set("comparison_delta", alert.ComparisonDelta),
 		d.Set("trigger", flattenMetricAlertTriggers(alert.Triggers)),
 	)
 	return diag.FromErr(retErr.ErrorOrNil())
