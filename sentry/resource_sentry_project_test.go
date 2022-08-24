@@ -54,7 +54,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 				ImportStateVerify: true,
 				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
 				// we will ignore them for now.
-				ImportStateVerifyIgnore: []string{"allowed_domains", "remove_default_key", "remove_default_rule"},
+				ImportStateVerifyIgnore: []string{"remove_default_key", "remove_default_rule"},
 			},
 		},
 	})
@@ -154,7 +154,7 @@ func TestAccSentryProject_teams(t *testing.T) {
 				ImportStateVerify: true,
 				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
 				// we will ignore them for now.
-				ImportStateVerifyIgnore: []string{"allowed_domains", "remove_default_key", "remove_default_rule"},
+				ImportStateVerifyIgnore: []string{"remove_default_key", "remove_default_rule"},
 			},
 		},
 	})

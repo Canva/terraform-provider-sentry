@@ -238,6 +238,7 @@ func resourceSentryProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("status", proj.Status),
 		d.Set("digests_min_delay", proj.DigestsMinDelay),
 		d.Set("digests_max_delay", proj.DigestsMaxDelay),
+		d.Set("allowed_domains", proj.AllowedDomains),
 		d.Set("resolve_age", proj.ResolveAge),
 		d.Set("project_id", proj.ID), // Deprecated
 	)
@@ -272,6 +273,15 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if v, ok := d.GetOk("resolve_age"); ok {
 		params.ResolveAge = sentry.Int(v.(int))
+	}
+
+	if v, ok := d.GetOk("allowed_domains"); ok {
+		allowed_domains_set := v.(*schema.Set)
+		allowed_domains := make([]string, allowed_domains_set.Len())
+		for i, domain := range allowed_domains_set.List() {
+			allowed_domains[i] = domain.(string)
+		}
+		params.AllowedDomains = allowed_domains
 	}
 
 	tflog.Debug(ctx, "Updating project", map[string]interface{}{
