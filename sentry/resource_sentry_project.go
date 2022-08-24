@@ -276,12 +276,12 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if v, ok := d.GetOk("allowed_domains"); ok {
-		allowed_domains_set := v.(*schema.Set)
-		allowed_domains := make([]string, allowed_domains_set.Len())
-		for i, domain := range allowed_domains_set.List() {
-			allowed_domains[i] = domain.(string)
+		allowedDomainsSet := v.(*schema.Set)
+		allowedDomains := make([]string, allowedDomainsSet.Len())
+		for i, domain := range allowedDomainsSet.List() {
+			allowedDomains[i] = domain.(string)
 		}
-		params.AllowedDomains = allowed_domains
+		params.AllowedDomains = allowedDomains
 	}
 
 	tflog.Debug(ctx, "Updating project", map[string]interface{}{
