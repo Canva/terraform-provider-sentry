@@ -70,6 +70,42 @@ func TestAccSentryProject_basic(t *testing.T) {
 	})
 }
 
+func TestAccSentryProject_removeDefaultKeyOnCreate(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
+				Check:  testAccSentryKeyRemoved(rn),
+			},
+		},
+	})
+}
+
+func TestAccSentryProject_removeDefaultRuleOnCreate(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
+				Check:  testAccSentryRuleRemoved(rn),
+			},
+		},
+	})
+}
+
 func TestAccSentryProject_changeTeam(t *testing.T) {
 	teamName1 := acctest.RandomWithPrefix("tf-team")
 	teamName2 := acctest.RandomWithPrefix("tf-team")

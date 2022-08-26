@@ -160,6 +160,7 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		teams = d.Get("teams").(*schema.Set).List()
 		team = teams[0].(string)
 	}
+
 	params := &sentry.CreateProjectParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
@@ -182,6 +183,7 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	})
 
 	d.SetId(proj.Slug)
+	d.Set("slug", proj.Slug)
 	return resourceSentryProjectUpdate(ctx, d, meta)
 }
 
