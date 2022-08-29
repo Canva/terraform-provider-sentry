@@ -160,6 +160,7 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		teams = d.Get("teams").(*schema.Set).List()
 		team = teams[0].(string)
 	}
+
 	params := &sentry.CreateProjectParams{
 		Name: d.Get("name").(string),
 		Slug: d.Get("slug").(string),
@@ -182,6 +183,7 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	})
 
 	d.SetId(proj.Slug)
+	d.Set("slug", proj.Slug)
 	return resourceSentryProjectUpdate(ctx, d, meta)
 }
 
@@ -253,9 +255,10 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	project := d.Id()
 	org := d.Get("organization").(string)
+	slug := d.Get("slug").(string)
 	params := &sentry.UpdateProjectParams{
 		Name: d.Get("name").(string),
-		Slug: d.Get("slug").(string),
+		Slug: slug,
 	}
 
 	platform := d.Get("platform").(string)
@@ -282,6 +285,20 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 			allowedDomains[i] = domain.(string)
 		}
 		params.AllowedDomains = allowedDomains
+	}
+
+	if _, ok := d.GetOk("remove_default_key"); ok {
+		err := removeDefaultKey(ctx, client, org, slug)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if _, ok := d.GetOk("remove_default_rule"); ok {
+		err := removeDefaultRule(ctx, client, org, slug)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	tflog.Debug(ctx, "Updating project", map[string]interface{}{
@@ -376,4 +393,36 @@ func resourceSentryProjectDelete(ctx context.Context, d *schema.ResourceData, me
 	})
 
 	return diag.FromErr(err)
+}
+
+func removeDefaultKey(ctx context.Context, client *sentry.Client, org, projSlug string) error {
+	keys, _, err := client.ProjectKeys.List(ctx, org, projSlug, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, key := range keys {
+		if key.Name == "Default" {
+			_, err = client.ProjectKeys.Delete(ctx, org, projSlug, key.ID)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func removeDefaultRule(ctx context.Context, client *sentry.Client, org, projSlug string) error {
+	rules, _, err := client.IssueAlerts.List(ctx, org, projSlug, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, rule := range rules {
+		if *rule.Name == "Send a notification for new issues" {
+			_, err = client.IssueAlerts.Delete(ctx, org, projSlug, *rule.ID)
+			return err
+		}
+	}
+
+	return nil
 }

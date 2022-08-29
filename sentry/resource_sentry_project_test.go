@@ -31,6 +31,8 @@ func TestAccSentryProject_basic(t *testing.T) {
 			resource.TestCheckResourceAttrSet(rn, "internal_id"),
 			resource.TestCheckResourceAttrPtr(rn, "internal_id", &projectID),
 			resource.TestCheckResourceAttrPair(rn, "project_id", rn, "internal_id"),
+			resource.TestCheckResourceAttrSet(rn, "remove_default_key"),
+			resource.TestCheckResourceAttrSet(rn, "remove_default_rule"),
 		)
 	}
 
@@ -48,6 +50,17 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check:  check(projectName + "-renamed"),
 			},
 			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, true),
+					testAccSentryCheckDefaultRule(rn, false),
+				),
+			},
+			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
+				Check:  testAccSentryCheckDefaultRule(rn, true),
+			},
+			{
 				ResourceName:      rn,
 				ImportState:       true,
 				ImportStateIdFunc: testAccSentryProjectImportStateIdFunc(rn),
@@ -55,6 +68,48 @@ func TestAccSentryProject_basic(t *testing.T) {
 				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
 				// we will ignore them for now.
 				ImportStateVerifyIgnore: []string{"remove_default_key", "remove_default_rule"},
+			},
+		},
+	})
+}
+
+func TestAccSentryProject_removeDefaultKeyOnCreate(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, true),
+					testAccSentryCheckDefaultRule(rn, false),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSentryProject_removeDefaultRuleOnCreate(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, false),
+					testAccSentryCheckDefaultRule(rn, true),
+				),
 			},
 		},
 	})
@@ -221,7 +276,7 @@ func testAccSentryProjectImportStateIdFunc(n string) resource.ImportStateIdFunc 
 	}
 }
 
-func testAccSentryProjectConfig(teamName, projectName string) string {
+func testAccSentryProjectConfigComplex(teamName, projectName string, removeDefaultKey bool, removeDefaultRule bool) string {
 	return testAccSentryTeamConfig(teamName) + fmt.Sprintf(`
 resource "sentry_project" "test" {
 	organization    = sentry_team.test.organization
@@ -229,8 +284,14 @@ resource "sentry_project" "test" {
 	name            = "%[1]s"
 	platform        = "go"
 	allowed_domains = ["www.test2.com", "www.test.com", "www.yourapp.com"]
+	remove_default_key = %[2]v
+	remove_default_rule = %[3]v
 }
-	`, projectName)
+	`, projectName, removeDefaultKey, removeDefaultRule)
+}
+
+func testAccSentryProjectConfig(teamName, projectName string) string {
+	return testAccSentryProjectConfigComplex(teamName, projectName, false, false)
 }
 
 func testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, teamResourceName string) string {
@@ -299,4 +360,72 @@ resource "sentry_team" "%[1]s" {
 	slug         = "%[1]s"
 }
 	`, teamName)
+}
+
+func testAccSentryCheckDefaultKey(n string, remove bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		var found, notFound error
+
+		if remove {
+			found = fmt.Errorf("default key not removed")
+			notFound = nil
+		} else {
+			found = nil
+			notFound = fmt.Errorf("default key removed")
+		}
+
+		rs := s.RootModule().Resources[n]
+		client := testAccProvider.Meta().(*sentry.Client)
+		ctx := context.Background()
+		keys, _, err := client.ProjectKeys.List(
+			ctx,
+			rs.Primary.Attributes["organization"],
+			rs.Primary.Attributes["slug"],
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, key := range keys {
+			if key.Name == "Default" {
+				return found
+			}
+		}
+		return notFound
+	}
+}
+
+func testAccSentryCheckDefaultRule(n string, removed bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		var found, notFound error
+
+		if removed {
+			found = fmt.Errorf("default rule not removed")
+			notFound = nil
+		} else {
+			found = nil
+			notFound = fmt.Errorf("default rule removed")
+		}
+
+		rs := s.RootModule().Resources[n]
+		client := testAccProvider.Meta().(*sentry.Client)
+		ctx := context.Background()
+		rules, _, err := client.IssueAlerts.List(
+			ctx,
+			rs.Primary.Attributes["organization"],
+			rs.Primary.Attributes["slug"],
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, rule := range rules {
+			if *rule.Name == "Send a notification for new issues" {
+				return found
+			}
+		}
+		return notFound
+	}
 }
