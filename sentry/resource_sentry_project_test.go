@@ -51,11 +51,14 @@ func TestAccSentryProject_basic(t *testing.T) {
 			},
 			{
 				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
-				Check:  testAccSentryKeyRemoved(rn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, true),
+					testAccSentryCheckDefaultRule(rn, false),
+				),
 			},
 			{
 				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
-				Check:  testAccSentryRuleRemoved(rn),
+				Check:  testAccSentryCheckDefaultRule(rn, true),
 			},
 			{
 				ResourceName:      rn,
@@ -82,7 +85,10 @@ func TestAccSentryProject_removeDefaultKeyOnCreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
-				Check:  testAccSentryKeyRemoved(rn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, true),
+					testAccSentryCheckDefaultRule(rn, false),
+				),
 			},
 		},
 	})
@@ -100,7 +106,10 @@ func TestAccSentryProject_removeDefaultRuleOnCreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
-				Check:  testAccSentryRuleRemoved(rn),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccSentryCheckDefaultKey(rn, false),
+					testAccSentryCheckDefaultRule(rn, true),
+				),
 			},
 		},
 	})
@@ -353,8 +362,18 @@ resource "sentry_team" "%[1]s" {
 	`, teamName)
 }
 
-func testAccSentryKeyRemoved(n string) resource.TestCheckFunc {
+func testAccSentryCheckDefaultKey(n string, remove bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		var found, notFound error
+
+		if remove {
+			found = fmt.Errorf("default key not removed")
+			notFound = nil
+		} else {
+			found = nil
+			notFound = fmt.Errorf("default key removed")
+		}
+
 		rs := s.RootModule().Resources[n]
 		client := testAccProvider.Meta().(*sentry.Client)
 		ctx := context.Background()
@@ -370,15 +389,25 @@ func testAccSentryKeyRemoved(n string) resource.TestCheckFunc {
 
 		for _, key := range keys {
 			if key.Name == "Default" {
-				return fmt.Errorf("default key not removed")
+				return found
 			}
 		}
-		return nil
+		return notFound
 	}
 }
 
-func testAccSentryRuleRemoved(n string) resource.TestCheckFunc {
+func testAccSentryCheckDefaultRule(n string, removed bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		var found, notFound error
+
+		if removed {
+			found = fmt.Errorf("default rule not removed")
+			notFound = nil
+		} else {
+			found = nil
+			notFound = fmt.Errorf("default rule removed")
+		}
+
 		rs := s.RootModule().Resources[n]
 		client := testAccProvider.Meta().(*sentry.Client)
 		ctx := context.Background()
@@ -393,10 +422,10 @@ func testAccSentryRuleRemoved(n string) resource.TestCheckFunc {
 		}
 
 		for _, rule := range rules {
-			if *rule.Name == "Default" {
-				return fmt.Errorf("default rule not removed")
+			if *rule.Name == "Send a notification for new issues" {
+				return found
 			}
 		}
-		return nil
+		return notFound
 	}
 }
