@@ -2,7 +2,7 @@ module github.com/canva/terraform-provider-sentry
 
 go 1.18
 
-replace github.com/jianyuan/go-sentry/v2 => github.com/canva/go-sentry v1.4.1
+replace github.com/jianyuan/go-sentry/v2 => github.com/canva/go-sentry v1.4.2
 
 require (
 	github.com/google/go-cmp v0.5.8
