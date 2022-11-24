@@ -119,10 +119,13 @@ Required:
 
 Optional:
 
+- `input_channel_id` (String) A slack channel ID to be used when the type is set to 'slack'
 - `integration_id` (Number)
 
 Read-Only:
 
+- `alert_rule_trigger_id` (String)
+- `description` (String)
 - `id` (String) The ID of this resource.
 
 ## Import

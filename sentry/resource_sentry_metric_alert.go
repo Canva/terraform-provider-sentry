@@ -2,6 +2,7 @@ package sentry
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -122,6 +123,19 @@ func resourceSentryMetricAlert() *schema.Resource {
 										Type:     schema.TypeInt,
 										Optional: true,
 									},
+									"input_channel_id": {
+										Description: "A slack channel ID to be used when the type is set to 'slack'",
+										Type:        schema.TypeString,
+										Optional:    true,
+									},
+									"alert_rule_trigger_id": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"description": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
 								},
 							},
 						},
@@ -160,7 +174,7 @@ func resourceSentryMetricAlert() *schema.Resource {
 	}
 }
 
-func resourceSentryMetricAlertObject(d *schema.ResourceData) *sentry.MetricAlert {
+func resourceSentryMetricAlertObject(d *schema.ResourceData) (*sentry.MetricAlert, error) {
 	alert := &sentry.MetricAlert{
 		Name:          sentry.String(d.Get("name").(string)),
 		DataSet:       sentry.String(d.Get("dataset").(string)),
@@ -192,9 +206,13 @@ func resourceSentryMetricAlertObject(d *schema.ResourceData) *sentry.MetricAlert
 	}
 
 	triggersIn := d.Get("trigger").([]interface{})
-	alert.Triggers = expandMetricAlertTriggers(triggersIn)
+	triggers, err := expandMetricAlertTriggers(triggersIn)
+	if err != nil {
+		return nil, err
+	}
+	alert.Triggers = triggers
 
-	return alert
+	return alert, nil
 }
 
 func resourceSentryMetricAlertCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -202,7 +220,10 @@ func resourceSentryMetricAlertCreate(ctx context.Context, d *schema.ResourceData
 
 	org := d.Get("organization").(string)
 	project := d.Get("project").(string)
-	alertReq := resourceSentryMetricAlertObject(d)
+	alertReq, err := resourceSentryMetricAlertObject(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	tflog.Info(ctx, "Creating metric alert", map[string]interface{}{
 		"org":      org,
@@ -276,7 +297,10 @@ func resourceSentryMetricAlertUpdate(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	alertReq := resourceSentryMetricAlertObject(d)
+	alertReq, err := resourceSentryMetricAlertObject(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	tflog.Debug(ctx, "Updating metric alert", map[string]interface{}{
 		"org":     org,
@@ -309,16 +333,21 @@ func resourceSentryMetricAlertDelete(ctx context.Context, d *schema.ResourceData
 	return diag.FromErr(err)
 }
 
-func expandMetricAlertTriggers(triggerList []interface{}) []*sentry.MetricAlertTrigger {
+func expandMetricAlertTriggers(triggerList []interface{}) ([]*sentry.MetricAlertTrigger, error) {
 	triggers := make([]*sentry.MetricAlertTrigger, 0, len(triggerList))
 	for _, triggerMap := range triggerList {
 		triggerMap := triggerMap.(map[string]interface{})
+		actions, err := expandMetricAlertTriggerActions(triggerMap["action"].([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+
 		trigger := &sentry.MetricAlertTrigger{
 			Label:            sentry.String(triggerMap["label"].(string)),
 			ThresholdType:    sentry.Int(triggerMap["threshold_type"].(int)),
 			AlertThreshold:   sentry.Float64(triggerMap["alert_threshold"].(float64)),
 			ResolveThreshold: sentry.Float64(triggerMap["resolve_threshold"].(float64)),
-			Actions:          expandMetricAlertTriggerActions(triggerMap["action"].([]interface{})),
+			Actions:          actions,
 		}
 		if v, ok := triggerMap["id"].(string); ok {
 			if v != "" {
@@ -327,10 +356,10 @@ func expandMetricAlertTriggers(triggerList []interface{}) []*sentry.MetricAlertT
 		}
 		triggers = append(triggers, trigger)
 	}
-	return triggers
+	return triggers, nil
 }
 
-func expandMetricAlertTriggerActions(actionList []interface{}) []*sentry.MetricAlertTriggerAction {
+func expandMetricAlertTriggerActions(actionList []interface{}) ([]*sentry.MetricAlertTriggerAction, error) {
 	actions := make([]*sentry.MetricAlertTriggerAction, 0, len(actionList))
 	for _, actionMap := range actionList {
 		actionMap := actionMap.(map[string]interface{})
@@ -347,9 +376,22 @@ func expandMetricAlertTriggerActions(actionList []interface{}) []*sentry.MetricA
 		if v, ok := actionMap["integration_id"].(int); ok && v != 0 {
 			action.IntegrationID = sentry.Int(v)
 		}
+		if sentry.StringValue(action.Type) == "slack" {
+			if v, ok := actionMap["input_channel_id"].(string); ok && v != "" {
+				action.InputChannelID = sentry.String(v)
+			} else {
+				return nil, errors.New("Channel ID must be set for slack action")
+			}
+		}
+		if v, ok := actionMap["alert_rule_trigger_id"].(string); ok && v != "" {
+			action.InputChannelID = sentry.String(v)
+		}
+		if v, ok := actionMap["description"].(string); ok && v != "" {
+			action.Description = sentry.String(v)
+		}
 		actions = append(actions, action)
 	}
-	return actions
+	return actions, nil
 }
 
 func flattenMetricAlertTriggers(triggers []*sentry.MetricAlertTrigger) []interface{} {
@@ -384,6 +426,9 @@ func flattenMetricAlertTriggerActions(actions []*sentry.MetricAlertTriggerAction
 		actionMap["target_type"] = action.TargetType
 		actionMap["target_identifier"] = action.TargetIdentifier
 		actionMap["integration_id"] = action.IntegrationID
+		actionMap["input_channel_id"] = action.InputChannelID
+		actionMap["alert_rule_trigger_id"] = action.AlertRuleTriggerID
+		actionMap["description"] = action.Description
 
 		actionList = append(actionList, actionMap)
 	}
