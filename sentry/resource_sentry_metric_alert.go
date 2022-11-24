@@ -384,7 +384,7 @@ func expandMetricAlertTriggerActions(actionList []interface{}) ([]*sentry.Metric
 			}
 		}
 		if v, ok := actionMap["alert_rule_trigger_id"].(string); ok && v != "" {
-			action.InputChannelID = sentry.String(v)
+			action.AlertRuleTriggerID = sentry.String(v)
 		}
 		if v, ok := actionMap["description"].(string); ok && v != "" {
 			action.Description = sentry.String(v)
