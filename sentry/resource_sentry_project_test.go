@@ -4,16 +4,129 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/jianyuan/go-sentry/v2/sentry"
+
+	"github.com/canva/terraform-provider-sentry/internal/acctest"
 )
 
 func TestAccSentryProject_basic(t *testing.T) {
+	teamName1 := acctest.RandomWithPrefix("tf-team")
+	teamName2 := acctest.RandomWithPrefix("tf-team")
+	teamName3 := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	check := func(projectName string, teamNames []string) resource.TestCheckFunc {
+		var projectID string
+
+		fs := resource.ComposeTestCheckFunc(
+			testAccCheckSentryProjectExists(rn, &projectID),
+			resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
+			resource.TestCheckResourceAttr(rn, "teams.#", strconv.Itoa(len(teamNames))),
+			resource.TestCheckResourceAttr(rn, "name", projectName),
+			resource.TestCheckResourceAttrSet(rn, "slug"),
+			resource.TestCheckResourceAttr(rn, "platform", "go"),
+			resource.TestCheckResourceAttrSet(rn, "internal_id"),
+			resource.TestCheckResourceAttrPtr(rn, "internal_id", &projectID),
+			resource.TestCheckResourceAttrPair(rn, "project_id", rn, "internal_id"),
+		)
+		for _, teamName := range teamNames {
+			fs = resource.ComposeTestCheckFunc(fs, resource.TestCheckTypeSetElemAttr(rn, "teams.*", teamName))
+		}
+		return fs
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfig_teams([]string{teamName1}, projectName),
+				Check:  check(projectName, []string{teamName1}),
+			},
+			{
+				Config: testAccSentryProjectConfig_teams([]string{teamName2}, projectName+"-renamed"),
+				Check:  check(projectName+"-renamed", []string{teamName2}),
+			},
+			{
+				Config: testAccSentryProjectConfig_teams([]string{teamName2, teamName3}, projectName+"-renamed"),
+				Check:  check(projectName+"-renamed", []string{teamName2, teamName3}),
+			},
+			{
+				ResourceName:            rn,
+				ImportState:             true,
+				ImportStateIdFunc:       testAccSentryProjectImportStateIdFunc(rn),
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_key", "default_rules"},
+			},
+		},
+	})
+}
+
+func TestAccSentryProject_teamMigration(t *testing.T) {
+	teams := []string{
+		acctest.RandomWithPrefix("tf-team"),
+		acctest.RandomWithPrefix("tf-team"),
+		acctest.RandomWithPrefix("tf-team"),
+	}
+	projectName := acctest.RandomWithPrefix("tf-project")
+	rn := "sentry_project.test"
+
+	check := func(team string, teams []string) resource.TestCheckFunc {
+		var projectID string
+
+		fs := resource.ComposeTestCheckFunc(
+			testAccCheckSentryProjectExists(rn, &projectID),
+			resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
+			resource.TestCheckResourceAttr(rn, "name", projectName),
+			resource.TestCheckResourceAttrSet(rn, "slug"),
+			resource.TestCheckResourceAttr(rn, "platform", "go"),
+			resource.TestCheckResourceAttrSet(rn, "internal_id"),
+			resource.TestCheckResourceAttrPtr(rn, "internal_id", &projectID),
+			resource.TestCheckResourceAttrPair(rn, "project_id", rn, "internal_id"),
+		)
+		if team != "" {
+			fs = resource.ComposeTestCheckFunc(fs, resource.TestCheckResourceAttr(rn, "team", team))
+		}
+		for _, team := range teams {
+			fs = resource.ComposeTestCheckFunc(fs, resource.TestCheckTypeSetElemAttr(rn, "teams.*", team))
+		}
+
+		return fs
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSentryProjectConfig_teams_old(teams, projectName),
+				Check:  check(teams[0], nil),
+			},
+			{
+				Config: testAccSentryProjectConfig_teams(teams, projectName),
+				Check:  check("", teams),
+			},
+			{
+				ResourceName:            rn,
+				ImportState:             true,
+				ImportStateIdFunc:       testAccSentryProjectImportStateIdFunc(rn),
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"team", "default_key", "default_rules"},
+			},
+		},
+	})
+}
+
+func TestAccSentryProject_deprecatedTeam(t *testing.T) {
 	teamName := acctest.RandomWithPrefix("tf-team")
 	projectName := acctest.RandomWithPrefix("tf-project")
 	rn := "sentry_project.test"
@@ -23,7 +136,7 @@ func TestAccSentryProject_basic(t *testing.T) {
 
 		return resource.ComposeTestCheckFunc(
 			testAccCheckSentryProjectExists(rn, &projectID),
-			resource.TestCheckResourceAttr(rn, "organization", testOrganization),
+			resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
 			resource.TestCheckResourceAttr(rn, "team", teamName),
 			resource.TestCheckResourceAttr(rn, "name", projectName),
 			resource.TestCheckResourceAttrSet(rn, "slug"),
@@ -37,16 +150,16 @@ func TestAccSentryProject_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
-		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSentryProjectConfig(teamName, projectName),
+				Config: testAccSentryProjectConfig_team(teamName, projectName),
 				Check:  check(projectName),
 			},
 			{
-				Config: testAccSentryProjectConfig(teamName, projectName+"-renamed"),
+				Config: testAccSentryProjectConfig_team(teamName, projectName+"-renamed"),
 				Check:  check(projectName + "-renamed"),
 			},
 			{
@@ -61,55 +174,49 @@ func TestAccSentryProject_basic(t *testing.T) {
 				Check:  testAccSentryCheckDefaultRule(rn, true),
 			},
 			{
-				ResourceName:      rn,
-				ImportState:       true,
-				ImportStateIdFunc: testAccSentryProjectImportStateIdFunc(rn),
-				ImportStateVerify: true,
-				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
-				// we will ignore them for now.
-				ImportStateVerifyIgnore: []string{"remove_default_key", "remove_default_rule"},
+				ResourceName:            rn,
+				ImportState:             true,
+				ImportStateIdFunc:       testAccSentryProjectImportStateIdFunc(rn),
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"team", "default_key", "default_rules"},
 			},
 		},
 	})
 }
 
-func TestAccSentryProject_removeDefaultKeyOnCreate(t *testing.T) {
+func TestAccSentryProject_noTeam(t *testing.T) {
 	teamName := acctest.RandomWithPrefix("tf-team")
 	projectName := acctest.RandomWithPrefix("tf-project")
-	rn := "sentry_project.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
-		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSentryProjectConfigComplex(teamName, projectName, true, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccSentryCheckDefaultKey(rn, true),
-					testAccSentryCheckDefaultRule(rn, false),
-				),
+				Config:      testAccSentryProjectConfig_noTeam(teamName, projectName),
+				ExpectError: regexp.MustCompile("one of team or teams must be configured"),
 			},
 		},
 	})
 }
 
-func TestAccSentryProject_removeDefaultRuleOnCreate(t *testing.T) {
+func TestAccSentryProject_teamConflict(t *testing.T) {
 	teamName := acctest.RandomWithPrefix("tf-team")
 	projectName := acctest.RandomWithPrefix("tf-project")
-	rn := "sentry_project.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
-		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSentryProjectConfigComplex(teamName, projectName, false, true),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccSentryCheckDefaultKey(rn, false),
-					testAccSentryCheckDefaultRule(rn, true),
-				),
+				Config:      testAccSentryProjectConfig_teamConflict(teamName, projectName),
+				ExpectError: regexp.MustCompile("\"team\": conflicts with teams"),
+			},
+			{
+				Config:      testAccSentryProjectConfig_teamConflict(teamName, projectName),
+				ExpectError: regexp.MustCompile("\"teams\": conflicts with team"),
 			},
 		},
 	})
@@ -126,7 +233,7 @@ func TestAccSentryProject_changeTeam(t *testing.T) {
 
 		return resource.ComposeTestCheckFunc(
 			testAccCheckSentryProjectExists(rn, &projectID),
-			resource.TestCheckResourceAttr(rn, "organization", testOrganization),
+			resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
 			resource.TestCheckResourceAttr(rn, "team", teamName),
 			resource.TestCheckResourceAttr(rn, "name", projectName),
 			resource.TestCheckResourceAttrSet(rn, "slug"),
@@ -138,9 +245,9 @@ func TestAccSentryProject_changeTeam(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
-		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, "test_1"),
@@ -154,77 +261,32 @@ func TestAccSentryProject_changeTeam(t *testing.T) {
 	})
 }
 
-func TestAccSentryProject_teams(t *testing.T) {
-	teamNamePrefix := "tf-team-"
-	teams := []string{
-		acctest.RandomWithPrefix(teamNamePrefix + "1"),
-		acctest.RandomWithPrefix(teamNamePrefix + "2"),
-		acctest.RandomWithPrefix(teamNamePrefix + "3"),
-	}
+func TestAccSentryProject_noDefaultKey(t *testing.T) {
+	teamName := acctest.RandomWithPrefix("tf-team")
 	projectName := acctest.RandomWithPrefix("tf-project")
-	rn := "sentry_project." + projectName
-
-	check := func(projectName string, team string, teams []string) resource.TestCheckFunc {
-		var projectID string
-
-		testChecks := []resource.TestCheckFunc{
-			testAccCheckSentryProjectExists(rn, &projectID),
-			resource.TestCheckResourceAttr(rn, "organization", testOrganization),
-			resource.TestCheckResourceAttr(rn, "name", projectName),
-			resource.TestCheckResourceAttrSet(rn, "slug"),
-			resource.TestCheckResourceAttr(rn, "platform", "go"),
-			resource.TestCheckResourceAttrSet(rn, "internal_id"),
-			resource.TestCheckResourceAttrPtr(rn, "internal_id", &projectID),
-			resource.TestCheckResourceAttrPair(rn, "project_id", rn, "internal_id"),
-		}
-
-		if team != "" {
-			testChecks = append(testChecks, resource.TestCheckResourceAttr(rn, "team", team))
-		}
-
-		for _, team := range teams {
-			testChecks = append(testChecks, resource.TestCheckTypeSetElemAttr(rn, "teams.*", team))
-		}
-
-		return resource.ComposeTestCheckFunc(testChecks...)
-	}
+	rn := "sentry_project.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
-		CheckDestroy:      testAccCheckSentryProjectDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckSentryProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSentryProjectConfig_teams(projectName, teams[0], []string{}),
-				Check:  check(projectName, teams[0], []string{}),
-			},
-			{
-				Config: testAccSentryProjectConfig_teams(projectName, "", teams),
-				Check:  check(projectName, "", teams),
-			},
-			{
-				ResourceName:      rn,
-				ImportState:       true,
-				ImportStateIdFunc: testAccSentryProjectImportStateIdFunc(rn),
-				ImportStateVerify: true,
-				// TODO: Until we update go-sentry to include these attributes in its project.Get function,
-				// we will ignore them for now.
-				ImportStateVerifyIgnore: []string{"remove_default_key", "remove_default_rule"},
+				Config: testAccSentryProjectConfig_noDefaultKey(teamName, projectName),
+				Check:  testAccCheckSentryProjectDefaultKeyRemoved(rn),
 			},
 		},
 	})
 }
 
 func testAccCheckSentryProjectDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_project" {
 			continue
 		}
 
 		ctx := context.Background()
-		proj, resp, err := client.Projects.Get(ctx, testOrganization, rs.Primary.ID)
+		proj, resp, err := acctest.SharedClient.Projects.Get(ctx, acctest.TestOrganization, rs.Primary.ID)
 		if err == nil {
 			if proj != nil {
 				return errors.New("project still exists")
@@ -249,9 +311,8 @@ func testAccCheckSentryProjectExists(n string, projectID *string) resource.TestC
 			return errors.New("no ID is set")
 		}
 
-		client := testAccProvider.Meta().(*sentry.Client)
 		ctx := context.Background()
-		gotProj, _, err := client.Projects.Get(
+		gotProj, _, err := acctest.SharedClient.Projects.Get(
 			ctx,
 			rs.Primary.Attributes["organization"],
 			rs.Primary.ID,
@@ -260,6 +321,27 @@ func testAccCheckSentryProjectExists(n string, projectID *string) resource.TestC
 			return err
 		}
 		*projectID = gotProj.ID
+		return nil
+	}
+}
+
+func testAccCheckSentryProjectDefaultKeyRemoved(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[n]
+		ctx := context.Background()
+
+		keys, _, err := acctest.SharedClient.ProjectKeys.List(
+			ctx,
+			rs.Primary.Attributes["organization"],
+			rs.Primary.ID,
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+		if len(keys) != 0 {
+			return fmt.Errorf("expected no keys, got %d", len(keys))
+		}
 		return nil
 	}
 }
@@ -290,8 +372,30 @@ resource "sentry_project" "test" {
 	`, projectName, removeDefaultKey, removeDefaultRule)
 }
 
-func testAccSentryProjectConfig(teamName, projectName string) string {
+func testAccSentryProjectConfig_team(teamName, projectName string) string {
 	return testAccSentryProjectConfigComplex(teamName, projectName, false, false)
+}
+
+func testAccSentryProjectConfig_noTeam(teamName, projectName string) string {
+	return testAccSentryTeamConfig(teamName) + fmt.Sprintf(`
+resource "sentry_project" "test" {
+	organization = sentry_team.test.organization
+	name         = "%[1]s"
+	platform     = "go"
+}
+	`, projectName)
+}
+
+func testAccSentryProjectConfig_teamConflict(teamName, projectName string) string {
+	return testAccSentryTeamConfig(teamName) + fmt.Sprintf(`
+resource "sentry_project" "test" {
+	organization = sentry_team.test.organization
+	team         = sentry_team.test.slug
+	teams        = [sentry_team.test.slug]
+	name         = "%[1]s"
+	platform     = "go"
+}
+	`, projectName)
 }
 
 func testAccSentryProjectConfig_changeTeam(teamName1, teamName2, projectName, teamResourceName string) string {
@@ -318,48 +422,75 @@ resource "sentry_project" "test" {
 	`, teamName1, teamName2, projectName, teamResourceName)
 }
 
-func testAccSentryProjectConfig_teams(projectName string, team string, teams []string) string {
-
+func testAccSentryProjectConfig_teams_old(teamNames []string, projectName string) string {
 	config := testAccSentryOrganizationDataSourceConfig
-	teamSlugs := make([]string, len(teams))
 
-	if team != "" {
-		config += testAccSentryTeam(team)
-		return config + fmt.Sprintf(`
-	resource "sentry_project" "%[1]s"{
-		organization  = sentry_team.%[2]s.organization
-		team         = "%[2]s"
-		name          = "%[1]s"
-		platform      = "go"
-	}
-		`, projectName, team)
-	}
-
-	for i, team := range teams {
-		config += testAccSentryTeam(team)
-		teamSlugs[i] = fmt.Sprintf("sentry_team.%[1]s.slug", team)
-	}
-
-	projectTeams := "[" + strings.Join(teamSlugs, ", ") + "]"
-
-	return config + fmt.Sprintf(`
-	resource "sentry_project" "%[1]s"{
-		organization  = sentry_team.%[2]s.organization
-		teams         = %[3]s
-		name          = "%[1]s"
-		platform      = "go"
-	}
-		`, projectName, teams[0], projectTeams)
-}
-
-func testAccSentryTeam(teamName string) string {
-	return fmt.Sprintf(`
-resource "sentry_team" "%[1]s" {
+	teamSlugs := make([]string, 0, len(teamNames))
+	for i, teamName := range teamNames {
+		config += fmt.Sprintf(`
+resource "sentry_team" "test_%[1]d" {
 	organization = data.sentry_organization.test.id
-	name         = "%[1]s"
-	slug         = "%[1]s"
+	name         = "%[2]s"
+	slug         = "%[2]s"
 }
-	`, teamName)
+		`, i, teamName)
+		teamSlugs = append(teamSlugs, fmt.Sprintf("sentry_team.test_%d.slug", i))
+	}
+
+	config += fmt.Sprintf(`
+resource "sentry_project" "test" {
+	organization = sentry_team.test_0.organization
+	team         = %[2]s
+	name         = "%[1]s"
+	platform     = "go"
+}
+	`, projectName, teamSlugs[0])
+
+	return config
+}
+
+func testAccSentryProjectConfig_teams(teamNames []string, projectName string) string {
+	config := testAccSentryOrganizationDataSourceConfig
+
+	teamSlugs := make([]string, 0, len(teamNames))
+	for i, teamName := range teamNames {
+		config += fmt.Sprintf(`
+resource "sentry_team" "test_%[1]d" {
+	organization = data.sentry_organization.test.id
+	name         = "%[2]s"
+	slug         = "%[2]s"
+}
+		`, i, teamName)
+		teamSlugs = append(teamSlugs, fmt.Sprintf("sentry_team.test_%d.slug", i))
+	}
+
+	config += fmt.Sprintf(`
+resource "sentry_project" "test" {
+	organization = sentry_team.test_0.organization
+	teams        = [%[2]s]
+	name         = "%[1]s"
+	platform     = "go"
+}
+	`, projectName, strings.Join(teamSlugs, ", "))
+
+	return config
+}
+
+func testAccSentryProjectConfig_noDefaultKey(teamName, projectName string) string {
+	return fmt.Sprintf(`
+resource "sentry_team" "test" {
+  organization = "%[1]s"
+  name		   = "%[2]s"
+}
+
+resource "sentry_project" "test" {
+  organization = sentry_team.test.organization
+  teams        = [sentry_team.test.id]
+  name         = "%[3]s"
+  platform     = "go"
+  default_key  = false
+}
+`, acctest.TestOrganization, teamName, projectName)
 }
 
 func testAccSentryCheckDefaultKey(n string, remove bool) resource.TestCheckFunc {
@@ -375,9 +506,8 @@ func testAccSentryCheckDefaultKey(n string, remove bool) resource.TestCheckFunc 
 		}
 
 		rs := s.RootModule().Resources[n]
-		client := testAccProvider.Meta().(*sentry.Client)
 		ctx := context.Background()
-		keys, _, err := client.ProjectKeys.List(
+		keys, _, err := acctest.SharedClient.ProjectKeys.List(
 			ctx,
 			rs.Primary.Attributes["organization"],
 			rs.Primary.Attributes["slug"],
@@ -409,9 +539,8 @@ func testAccSentryCheckDefaultRule(n string, removed bool) resource.TestCheckFun
 		}
 
 		rs := s.RootModule().Resources[n]
-		client := testAccProvider.Meta().(*sentry.Client)
 		ctx := context.Background()
-		rules, _, err := client.IssueAlerts.List(
+		rules, _, err := acctest.SharedClient.IssueAlerts.List(
 			ctx,
 			rs.Primary.Attributes["organization"],
 			rs.Primary.Attributes["slug"],

@@ -17,12 +17,14 @@ Sentry Project resource.
 resource "sentry_project" "default" {
   organization = "my-organization"
 
-  team = "my-team"
-  name = "Web App"
-  slug = "web-app"
+  teams = ["my-first-team", "my-second-team"]
+  name  = "Web App"
+  slug  = "web-app"
 
   platform    = "javascript"
   resolve_age = 720
+
+  default_rules = false
 }
 ```
 
@@ -37,6 +39,8 @@ resource "sentry_project" "default" {
 ### Optional
 
 - `allowed_domains` (Set of String) The domains allowed to be collected
+- `default_key` (Boolean) Whether to create a default key. By default, Sentry will create a key for you. If you wish to manage keys manually, set this to false and create keys using the `sentry_key` resource.
+- `default_rules` (Boolean) Whether to create a default issue alert. Defaults to true where the behavior is to alert the user on every new issue.
 - `digests_max_delay` (Number) The maximum amount of time (in seconds) to wait between scheduling digests for delivery.
 - `digests_min_delay` (Number) The minimum amount of time (in seconds) to wait between scheduling digests for delivery after the initial scheduling.
 - `grouping_enhancements` (String) Grouping enhancements pattern
@@ -45,8 +49,8 @@ resource "sentry_project" "default" {
 - `remove_default_rule` (Boolean) Whether to remove the default rule
 - `resolve_age` (Number) Hours in which an issue is automatically resolve if not seen after this amount of time.
 - `slug` (String) The optional slug for this project.
-- `team` (String, Deprecated) The slug of the team to create the project for. One of 'team' or 'teams' must be set.
-- `teams` (Set of String) The slugs of the teams to create the project for. One of 'team' or 'teams' must be set.
+- `team` (String, Deprecated) The slug of the team to create the project for. **Deprecated** Use `teams` instead.
+- `teams` (Set of String) The slugs of the teams to create the project for.
 
 ### Read-Only
 

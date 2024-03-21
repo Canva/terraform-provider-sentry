@@ -2,12 +2,17 @@ package sentry
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
@@ -31,19 +36,20 @@ func resourceSentryProject() *schema.Resource {
 				Required:    true,
 			},
 			"team": {
-				Description: "The slug of the team to create the project for. One of 'team' or 'teams' must be set.",
-				Type:        schema.TypeString,
-				Deprecated:  "To be replaced by 'teams' in a future release.",
-				Optional:    true,
+				Description:   "The slug of the team to create the project for. **Deprecated** Use `teams` instead.",
+				Type:          schema.TypeString,
+				Deprecated:    "Use `teams` instead.",
+				ConflictsWith: []string{"teams"},
+				Optional:      true,
 			},
 			"teams": {
-				Description: "The slugs of the teams to create the project for. One of 'team' or 'teams' must be set.",
+				Description: "The slugs of the teams to create the project for.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ExactlyOneOf: []string{"team"},
-				Optional:     true,
+				ConflictsWith: []string{"team"},
+				Optional:      true,
 			},
 			"name": {
 				Description: "The name for the project.",
@@ -57,10 +63,23 @@ func resourceSentryProject() *schema.Resource {
 				Computed:    true,
 			},
 			"platform": {
-				Description: "The optional platform for this project.",
-				Type:        schema.TypeString,
+				Description:      "The optional platform for this project.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: validatePlatform,
+			},
+			"default_rules": {
+				Description: "Whether to create a default issue alert. Defaults to true where the behavior is to alert the user on every new issue.",
+				Type:        schema.TypeBool,
 				Optional:    true,
-				Computed:    true,
+				Default:     true,
+			},
+			"default_key": {
+				Description: "Whether to create a default key. By default, Sentry will create a key for you. If you wish to manage keys manually, set this to false and create keys using the `sentry_key` resource.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 			"internal_id": {
 				Description: "The internal ID for this project.",
@@ -152,13 +171,21 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*sentry.Client)
 
 	org := d.Get("organization").(string)
-	team := d.Get("team").(string)
-	var teams []interface{}
-	if team == "" {
+
+	team, teamOk := d.GetOk("team")
+	teams, teamsOk := d.GetOk("teams")
+	if !teamOk && !teamsOk {
+		return diag.FromErr(errors.New("one of team or teams must be configured"))
+	}
+
+	var initialTeam string
+	if teamOk {
+		initialTeam = team.(string)
+	} else {
 		// Since `Set.List()` produces deterministic ordering, `teams[0]` should always
 		// resolve to the same value given the same `teams`.
-		teams = d.Get("teams").(*schema.Set).List()
-		team = teams[0].(string)
+		// Pick the first team when creating the project.
+		initialTeam = teams.(*schema.Set).List()[0].(string)
 	}
 
 	params := &sentry.CreateProjectParams{
@@ -166,21 +193,36 @@ func resourceSentryProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		Slug: d.Get("slug").(string),
 	}
 
+	defaultRules, defaultRulesOk := d.GetOkExists("default_rules")
+	if defaultRulesOk {
+		params.DefaultRules = sentry.Bool(defaultRules.(bool))
+	}
+
 	tflog.Debug(ctx, "Creating Sentry project", map[string]interface{}{
-		"team":  team,
-		"teams": teams,
-		"org":   org,
+		"team":         team,
+		"teams":        teams,
+		"org":          org,
+		"initialTeam":  initialTeam,
+		"defaultRules": params.DefaultRules,
 	})
-	proj, _, err := client.Projects.Create(ctx, org, team, params)
+	proj, _, err := client.Projects.Create(ctx, org, initialTeam, params)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	tflog.Debug(ctx, "Created Sentry project", map[string]interface{}{
 		"projectSlug": proj.Slug,
 		"projectID":   proj.ID,
-		"team":        team,
+		"team":        initialTeam,
 		"org":         org,
 	})
+
+	defaultKey, defaultKeyOk := d.GetOkExists("default_key")
+	if defaultKeyOk && !defaultKey.(bool) {
+		err = removeDefaultKey(ctx, client, org, proj.Slug)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	d.SetId(proj.Slug)
 	d.Set("slug", proj.Slug)
@@ -244,6 +286,15 @@ func resourceSentryProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("resolve_age", proj.ResolveAge),
 		d.Set("project_id", proj.ID), // Deprecated
 	)
+	if _, ok := d.GetOk("team"); ok {
+		retErr = multierror.Append(retErr, d.Set("team", proj.Team.Slug))
+	} else {
+		teams := make([]string, 0, len(proj.Teams))
+		for _, team := range proj.Teams {
+			teams = append(teams, *team.Slug)
+		}
+		retErr = multierror.Append(retErr, d.Set("teams", flattenStringSet(teams)))
+	}
 
 	// TODO: Project options
 
@@ -340,35 +391,37 @@ func resourceSentryProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	// Ensure old teams and new teams do not overlap.
 	for newTeam := range newTeams {
-		if _, exists := oldTeams[newTeam]; exists {
-			delete(oldTeams, newTeam)
-		}
+		delete(oldTeams, newTeam)
 	}
 
-	tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
-		"org":        org,
-		"project":    project,
-		"teamsToAdd": newTeams,
-	})
+	if len(newTeams) > 0 {
+		tflog.Debug(ctx, "Adding teams to project", map[string]interface{}{
+			"org":        org,
+			"project":    project,
+			"teamsToAdd": newTeams,
+		})
 
-	for newTeam := range newTeams {
-		_, _, err = client.Projects.AddTeam(ctx, org, project, newTeam)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
-		"org":           org,
-		"project":       project,
-		"teamsToRemove": oldTeams,
-	})
-
-	for oldTeam := range oldTeams {
-		resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
-		if err != nil {
-			if resp.Response.StatusCode != http.StatusNotFound {
+		for newTeam := range newTeams {
+			_, _, err = client.Projects.AddTeam(ctx, org, project, newTeam)
+			if err != nil {
 				return diag.FromErr(err)
+			}
+		}
+	}
+
+	if len(oldTeams) > 0 {
+		tflog.Debug(ctx, "Removing teams from project", map[string]interface{}{
+			"org":           org,
+			"project":       project,
+			"teamsToRemove": oldTeams,
+		})
+
+		for oldTeam := range oldTeams {
+			resp, err := client.Projects.RemoveTeam(ctx, org, project, oldTeam)
+			if err != nil {
+				if resp.Response.StatusCode != http.StatusNotFound {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}
@@ -395,17 +448,73 @@ func resourceSentryProjectDelete(ctx context.Context, d *schema.ResourceData, me
 	return diag.FromErr(err)
 }
 
-func removeDefaultKey(ctx context.Context, client *sentry.Client, org, projSlug string) error {
-	keys, _, err := client.ProjectKeys.List(ctx, org, projSlug, nil)
-	if err != nil {
-		return err
+func validatePlatform(i interface{}, path cty.Path) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+
+	v := i.(string)
+	if v == "other" {
+		return nil
 	}
 
-	for _, key := range keys {
-		if key.Name == "Default" {
-			_, err = client.ProjectKeys.Delete(ctx, org, projSlug, key.ID)
+	urls := []string{
+		fmt.Sprintf("https://docs.sentry.io/_platforms/%s.json", v),
+		fmt.Sprintf(
+			"https://docs.sentry.io/_platforms/%s.json",
+			strings.Replace(v, "-", "/", 1),
+		),
+	}
+
+	for _, url := range urls {
+		resp, err := http.Get(url)
+
+		if err != nil {
+			msg := "could not validate the platform at this time"
+			diagnostics = append(diagnostics, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       msg,
+				Detail:        msg,
+				AttributePath: path,
+			})
+		} else if resp.StatusCode == 200 {
+			return nil
+		}
+	}
+
+	msg := fmt.Sprintf("%s is not a valid platform", v)
+	diagnostics = append(diagnostics, diag.Diagnostic{
+		Severity:      diag.Error,
+		Summary:       msg,
+		Detail:        msg,
+		AttributePath: path,
+	})
+	return diagnostics
+}
+
+func removeDefaultKey(ctx context.Context, client *sentry.Client, organizationSlug string, projectSlug string) error {
+	listParams := &sentry.ListCursorParams{}
+
+	for {
+		keys, resp, err := client.ProjectKeys.List(ctx, organizationSlug, projectSlug, listParams)
+		if err != nil {
 			return err
 		}
+
+		for _, key := range keys {
+			if key.Name == "Default" {
+				// Delete the default rule
+				_, err := client.ProjectKeys.Delete(ctx, organizationSlug, projectSlug, key.ID)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+
+		if resp.Cursor == "" {
+			break
+		}
+		listParams.Cursor = resp.Cursor
 	}
 
 	return nil

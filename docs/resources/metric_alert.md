@@ -14,9 +14,9 @@ Sentry Metric Alert resource.
 
 ```terraform
 data "sentry_organization_integration" "slack" {
-  organization = "organization"
+  organization = sentry_project.main.organization
   provider_key = "slack"
-  name         = "organization-slack"
+  name         = "Slack Workspace" # Name of your Slack workspace
 }
 
 resource "sentry_metric_alert" "main" {
@@ -47,6 +47,7 @@ resource "sentry_metric_alert" "main" {
       type              = "slack"
       target_type       = "specific"
       target_identifier = "#slack-channel"
+      input_channel_id  = "C0XXXXXXXXX"
       integration_id    = data.sentry_organization_integration.slack.id
     }
     alert_threshold = 300
@@ -82,6 +83,7 @@ resource "sentry_metric_alert" "main" {
  Values must be one of: 5, 15, 60 (for one hour), 1440 (for one day), 10080 (for one week), or 43200 (for one month).
 - `dataset` (String) The Sentry Alert category
 - `environment` (String) Perform Alert rule in a specific environment
+- `event_types` (List of String) The events type of dataset.
 - `owner` (String) Specifies the owner id of this Alert rule
 - `resolve_threshold` (Number) The value at which the Alert rule resolves
 
@@ -113,14 +115,14 @@ Read-Only:
 
 Required:
 
-- `target_identifier` (String)
 - `target_type` (String)
 - `type` (String)
 
 Optional:
 
-- `input_channel_id` (String) A slack channel ID to be used when the type is set to 'slack'
+- `input_channel_id` (String) Slack channel ID to avoid rate-limiting, see [here](https://docs.sentry.io/product/integrations/notification-incidents/slack/#rate-limiting-error)
 - `integration_id` (Number)
+- `target_identifier` (String)
 
 Read-Only:
 
@@ -136,5 +138,7 @@ Import is supported using the following syntax:
 # import using the organization, project slugs and rule id from the URL:
 # https://sentry.io/organizations/[org-slug]/projects/[project-slug]/
 # https://sentry.io/organizations/[org-slug]/alerts/rules/details/[rule-id]/
+# or
+# https://sentry.io/organizations/[org-slug]/alerts/metric-rules/[project-slug]/[rule-id]/
 terraform import sentry_metric_alert.default org-slug/project-slug/rule-id
 ```

@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
@@ -52,6 +53,14 @@ func dataSourceSentryMetricAlert() *schema.Resource {
 			"dataset": {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			"event_types": {
+				Description: "The events type of dataset.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 			"query": {
 				Type:     schema.TypeString,
@@ -107,9 +116,13 @@ func dataSourceSentryMetricAlert() *schema.Resource {
 										Type:     schema.TypeString,
 										Computed: true,
 									},
+									"input_channel_id": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
 									"integration_id": {
 										Type:     schema.TypeInt,
-										Optional: true,
+										Computed: true,
 									},
 								},
 							},
@@ -158,6 +171,7 @@ func dataSourceSentryMetricAlertRead(ctx context.Context, d *schema.ResourceData
 		d.Set("name", alert.Name),
 		d.Set("environment", alert.Environment),
 		d.Set("dataset", alert.DataSet),
+		d.Set("event_types", alert.EventTypes),
 		d.Set("query", alert.Query),
 		d.Set("aggregate", alert.Aggregate),
 		d.Set("time_window", alert.TimeWindow),

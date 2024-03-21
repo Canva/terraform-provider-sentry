@@ -5,9 +5,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/canva/terraform-provider-sentry/internal/acctest"
 )
 
 func TestAccSentryKeyDataSource_basic(t *testing.T) {
@@ -16,8 +17,8 @@ func TestAccSentryKeyDataSource_basic(t *testing.T) {
 	dn := "data.sentry_key.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryKeyDataSourceConfig(teamName, projectName),
@@ -43,8 +44,8 @@ func TestAccSentryKeyDataSource_first(t *testing.T) {
 	dn := "data.sentry_key.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryKeyDataSourceConfig_first(teamName, projectName),
@@ -64,8 +65,8 @@ func TestAccSentryKeyDataSource_name(t *testing.T) {
 	dn := "data.sentry_key.test"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryKeyDataSourceConfig_name(teamName, projectName, keyName),
@@ -94,7 +95,7 @@ func testAccCheckSentryKeyDataSourceID(n string) resource.TestCheckFunc {
 }
 
 func testAccSentryKeyDataSourceConfig(teamName, projectName string) string {
-	return testAccSentryProjectConfig(teamName, projectName) + `
+	return testAccSentryProjectConfig_team(teamName, projectName) + `
 data "sentry_key" "test" {
 	organization = sentry_project.test.organization
 	project      = sentry_project.test.id
@@ -104,7 +105,7 @@ data "sentry_key" "test" {
 
 // Testing first parameter
 func testAccSentryKeyDataSourceConfig_first(teamName, projectName string) string {
-	return testAccSentryProjectConfig(teamName, projectName) + `
+	return testAccSentryProjectConfig_team(teamName, projectName) + `
 resource "sentry_key" "test_2" {
 	organization = sentry_project.test.organization
 	project      = sentry_project.test.id
@@ -123,7 +124,7 @@ data "sentry_key" "test" {
 
 // Testing name parameter
 func testAccSentryKeyDataSourceConfig_name(teamName, projectName, keyName string) string {
-	return testAccSentryProjectConfig(teamName, projectName) + fmt.Sprintf(`
+	return testAccSentryProjectConfig_team(teamName, projectName) + fmt.Sprintf(`
 resource "sentry_key" "test_2" {
 	organization = sentry_project.test.organization
 	project      = sentry_project.test.id
