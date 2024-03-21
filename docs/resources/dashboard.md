@@ -148,12 +148,12 @@ resource "sentry_dashboard" "main" {
 
   widget {
     title        = "Errors by Country"
-    display_type = "world_map"
+    display_type = "table"
     interval     = "5m"
     widget_type  = "discover"
 
     query {
-      fields     = ["count()"]
+      fields     = ["geo.country_code", "geo.region", "count()"]
       aggregates = ["count()"]
       conditions = "!event.type:transaction has:geo.country_code"
       order_by   = "count()"
@@ -412,4 +412,12 @@ Read-Only:
 
 - `id` (String) The ID of this resource.
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+# import using the dashboard id from the URL:
+# https://sentry.io/dashboard/[dashboard-id]
+terraform import sentry_dashboard.default org-slug/dashboard-id
+```

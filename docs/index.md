@@ -1,12 +1,16 @@
 ---
-page_title: "Sentry Provider"
+page_title: "Official Sentry Terraform Provider"
 description: |-
-  Terraform provider for Sentry.
+  The Terraform provider for Sentry allows teams to configure and update Sentry project parameters via their command line. This provider is built and maintained by a community developer and officially sponsored by Sentry.
 ---
 
-# Sentry Provider
+# Official Sentry Terraform Provider
 
-Terraform provider for [Sentry](https://sentry.io). The provider utilises the [Web APIs](https://docs.sentry.io/api/) to interact with Sentry resources:
+The Sentry Terraform provider is an open-source project built and maintained by a community developer and officially sponsored by [Sentry](https://sentry.io). 
+
+The Sentry Terraform provider allows your team to configure and update Sentry project parameters including Projects, Alerts (Issues & Transactions), Dashboards, Teams, and Organizations - programmatically. This helps you easily provision Sentry while also giving you the option to work from an interface you are already familiar with. If you have questions, feature requests, or issues you'd like to report, please [contact Sentry](https://help.sentry.io/) or click on 'report an issue' to the right.
+
+This provider utilizes the [Web APIs](https://docs.sentry.io/api/) to interact with Sentry resources.
 
 **Organization**
 
@@ -271,9 +275,9 @@ output "issue_alert_url" {
 #
 
 data "sentry_organization_integration" "slack" {
-  organization = "organization"
+  organization = sentry_project.main.organization
   provider_key = "slack"
-  name         = "Organization" // corresponds to Slack's name of your organisation
+  name         = "Slack Workspace" # Name of your Slack workspace
 }
 
 resource "sentry_metric_alert" "main" {
@@ -464,12 +468,12 @@ resource "sentry_dashboard" "main" {
 
   widget {
     title        = "Errors by Country"
-    display_type = "world_map"
+    display_type = "table"
     interval     = "5m"
     widget_type  = "discover"
 
     query {
-      fields     = ["count()"]
+      fields     = ["geo.country_code", "geo.region", "count()"]
       aggregates = ["count()"]
       conditions = "!event.type:transaction has:geo.country_code"
       order_by   = "count()"

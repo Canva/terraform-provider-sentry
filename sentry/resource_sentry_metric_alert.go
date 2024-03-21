@@ -2,14 +2,16 @@ package sentry
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
@@ -52,6 +54,14 @@ func resourceSentryMetricAlert() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "The Sentry Alert category",
+			},
+			"event_types": {
+				Description: "The events type of dataset.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 			"query": {
 				Type:        schema.TypeString,
@@ -117,16 +127,16 @@ func resourceSentryMetricAlert() *schema.Resource {
 									},
 									"target_identifier": {
 										Type:     schema.TypeString,
-										Required: true,
+										Optional: true,
+									},
+									"input_channel_id": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "Slack channel ID to avoid rate-limiting, see [here](https://docs.sentry.io/product/integrations/notification-incidents/slack/#rate-limiting-error)",
 									},
 									"integration_id": {
 										Type:     schema.TypeInt,
 										Optional: true,
-									},
-									"input_channel_id": {
-										Description: "A slack channel ID to be used when the type is set to 'slack'",
-										Type:        schema.TypeString,
-										Optional:    true,
 									},
 									"alert_rule_trigger_id": {
 										Type:     schema.TypeString,
@@ -192,6 +202,12 @@ func resourceSentryMetricAlertObject(d *schema.ResourceData) (*sentry.MetricAler
 	if v, ok := d.GetOk("dataset"); ok {
 		alert.DataSet = sentry.String(v.(string))
 	}
+	if v, ok := d.GetOk("event_types"); ok {
+		eventTypes := expandStringList(v.([]interface{}))
+		if len(eventTypes) > 0 {
+			alert.EventTypes = eventTypes
+		}
+	}
 	if v, ok := d.GetOk("resolve_threshold"); ok {
 		alert.ResolveThreshold = sentry.Float64(v.(float64))
 	}
@@ -229,7 +245,7 @@ func resourceSentryMetricAlertCreate(ctx context.Context, d *schema.ResourceData
 		"org":      org,
 		"project":  project,
 		"ruleName": alertReq.Name,
-		"params":   alertReq,
+		"params":   fmt.Sprintf("%+v", alertReq),
 	})
 	alert, _, err := client.MetricAlerts.Create(ctx, org, project, alertReq)
 	if err != nil {
@@ -264,6 +280,9 @@ func resourceSentryMetricAlertRead(ctx context.Context, d *schema.ResourceData, 
 		}
 		return diag.FromErr(err)
 	}
+	tflog.Debug(ctx, "Read metric alert", map[string]interface{}{
+		"alert": fmt.Sprintf("%+v", alert),
+	})
 
 	d.SetId(buildThreePartID(org, project, sentry.StringValue(alert.ID)))
 	retError := multierror.Append(
@@ -271,6 +290,7 @@ func resourceSentryMetricAlertRead(ctx context.Context, d *schema.ResourceData, 
 		d.Set("name", alert.Name),
 		d.Set("environment", alert.Environment),
 		d.Set("dataset", alert.DataSet),
+		d.Set("event_types", alert.EventTypes),
 		d.Set("query", alert.Query),
 		d.Set("aggregate", alert.Aggregate),
 		d.Set("time_window", alert.TimeWindow),
@@ -364,30 +384,28 @@ func expandMetricAlertTriggerActions(actionList []interface{}) ([]*sentry.Metric
 	for _, actionMap := range actionList {
 		actionMap := actionMap.(map[string]interface{})
 		action := &sentry.MetricAlertTriggerAction{
-			Type:             sentry.String(actionMap["type"].(string)),
-			TargetType:       sentry.String(actionMap["target_type"].(string)),
-			TargetIdentifier: sentry.String(actionMap["target_identifier"].(string)),
+			Type:       sentry.String(actionMap["type"].(string)),
+			TargetType: sentry.String(actionMap["target_type"].(string)),
 		}
 		if v, ok := actionMap["id"].(string); ok {
 			if v != "" {
 				action.ID = sentry.String(v)
 			}
 		}
-		if v, ok := actionMap["integration_id"].(int); ok && v != 0 {
-			action.IntegrationID = sentry.Int(v)
-		}
-		if sentry.StringValue(action.Type) == "slack" {
-			if v, ok := actionMap["input_channel_id"].(string); ok && v != "" {
-				action.InputChannelID = sentry.String(v)
-			} else {
-				return nil, errors.New("Channel ID must be set for slack action")
+		if v, ok := actionMap["target_identifier"].(string); ok {
+			if v != "" {
+				action.TargetIdentifier = &sentry.Int64OrString{IsString: true, StringVal: v}
 			}
 		}
-		if v, ok := actionMap["alert_rule_trigger_id"].(string); ok && v != "" {
-			action.AlertRuleTriggerID = sentry.String(v)
+		if v, ok := actionMap["input_channel_id"].(string); ok {
+			if v != "" {
+				action.InputChannelID = sentry.String(v)
+			}
 		}
-		if v, ok := actionMap["description"].(string); ok && v != "" {
-			action.Description = sentry.String(v)
+		if v, ok := actionMap["integration_id"].(int); ok {
+			if v != 0 {
+				action.IntegrationID = sentry.Int(v)
+			}
 		}
 		actions = append(actions, action)
 	}
@@ -424,11 +442,15 @@ func flattenMetricAlertTriggerActions(actions []*sentry.MetricAlertTriggerAction
 		actionMap["id"] = action.ID
 		actionMap["type"] = action.Type
 		actionMap["target_type"] = action.TargetType
-		actionMap["target_identifier"] = action.TargetIdentifier
-		actionMap["integration_id"] = action.IntegrationID
+		if action.TargetIdentifier != nil {
+			if action.TargetIdentifier.IsInt64 {
+				actionMap["target_identifier"] = strconv.FormatInt(action.TargetIdentifier.Int64Val, 10)
+			} else {
+				actionMap["target_identifier"] = action.TargetIdentifier.StringVal
+			}
+		}
 		actionMap["input_channel_id"] = action.InputChannelID
-		actionMap["alert_rule_trigger_id"] = action.AlertRuleTriggerID
-		actionMap["description"] = action.Description
+		actionMap["integration_id"] = action.IntegrationID
 
 		actionList = append(actionList, actionMap)
 	}

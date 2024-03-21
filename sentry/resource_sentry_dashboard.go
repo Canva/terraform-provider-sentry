@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
 	"github.com/jianyuan/go-sentry/v2/sentry"
 )
 
@@ -61,7 +62,6 @@ func resourceSentryDashboard() *schema.Resource {
 									"stacked_area",
 									"bar",
 									"table",
-									"world_map",
 									"big_number",
 									"top_n",
 								},

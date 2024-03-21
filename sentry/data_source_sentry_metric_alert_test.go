@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/canva/terraform-provider-sentry/internal/acctest"
 )
 
 func TestAccSentryMetricAlertDataSource_basic(t *testing.T) {
@@ -20,14 +21,14 @@ func TestAccSentryMetricAlertDataSource_basic(t *testing.T) {
 	var alertCopyID string
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryMetricAlertDataSourceConfig(teamName, projectName, alertName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSentryMetricAlertExists(rn, &alertID),
-					resource.TestCheckResourceAttr(dn, "organization", testOrganization),
+					resource.TestCheckResourceAttr(dn, "organization", acctest.TestOrganization),
 					resource.TestCheckResourceAttr(dn, "project", projectName),
 					resource.TestCheckResourceAttrPair(dn, "organization", rn, "organization"),
 					resource.TestCheckResourceAttrPair(dn, "project", rn, "project"),
@@ -35,6 +36,8 @@ func TestAccSentryMetricAlertDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dn, "name", rn, "name"),
 					resource.TestCheckResourceAttrPair(dn, "environment", rn, "environment"),
 					resource.TestCheckResourceAttrPair(dn, "dataset", rn, "dataset"),
+					resource.TestCheckResourceAttr(dn, "event_types.#", "1"),
+					resource.TestCheckResourceAttrPair(dn, "event_types.0", rn, "event_types.0"),
 					resource.TestCheckResourceAttrPair(dn, "query", rn, "query"),
 					resource.TestCheckResourceAttrPair(dn, "aggregate", rn, "aggregate"),
 					resource.TestCheckResourceAttrPair(dn, "time_window", rn, "time_window"),
@@ -69,12 +72,13 @@ func TestAccSentryMetricAlertDataSource_basic(t *testing.T) {
 }
 
 func testAccSentryMetricAlertDataSourceConfig(teamName, projectName, alertName string) string {
-	return testAccSentryProjectConfig(teamName, projectName) + fmt.Sprintf(`
+	return testAccSentryProjectConfig_team(teamName, projectName) + fmt.Sprintf(`
 resource "sentry_metric_alert" "test" {
 	organization      = sentry_project.test.organization
 	project           = sentry_project.test.id
 	name              = "%[1]s"
-	dataset           = "transactions"
+	dataset           = "generic_metrics"
+	event_types       = ["transaction"]
 	query             = "http.url:http://testservice.com/stats"
 	aggregate         = "p50(transaction.duration)"
 	time_window       = 50.0
@@ -113,6 +117,7 @@ resource "sentry_metric_alert" "test_copy" {
 	project           = data.sentry_metric_alert.test.project
 	name              = "${data.sentry_metric_alert.test.name}-copy"
 	dataset           = data.sentry_metric_alert.test.dataset
+	event_types       = data.sentry_metric_alert.test.event_types
 	query             = data.sentry_metric_alert.test.query
 	aggregate         = data.sentry_metric_alert.test.aggregate
 	time_window       = data.sentry_metric_alert.test.time_window

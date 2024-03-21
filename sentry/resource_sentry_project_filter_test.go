@@ -9,10 +9,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/jianyuan/go-sentry/v2/sentry"
+
+	"github.com/canva/terraform-provider-sentry/internal/acctest"
 )
 
 func TestAccSentryProjectFilter_basic(t *testing.T) {
@@ -21,9 +22,9 @@ func TestAccSentryProjectFilter_basic(t *testing.T) {
 	var filterConfig sentry.FilterConfig
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSentryProjectFilterDestroy,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             testAccCheckSentryProjectFilterDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccSentryProjectFilterConfig(teamName, projectName),
@@ -34,15 +35,13 @@ func TestAccSentryProjectFilter_basic(t *testing.T) {
 }
 
 func testAccCheckSentryProjectFilterDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*sentry.Client)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "sentry_filter" {
 			continue
 		}
 
 		ctx := context.Background()
-		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(ctx, testOrganization, rs.Primary.Attributes["project"])
+		filterConfig, _, err := acctest.SharedClient.ProjectFilters.GetFilterConfig(ctx, acctest.TestOrganization, rs.Primary.Attributes["project"])
 		// We should not be able to reach https://[API]/[PROJECT]/filters since it should be deleted at this point.
 		// TODO: Don't error out in `go-sentry.ProjectFilter.GetFilterConfig` if the project or rule does not exist.
 		if strings.Contains(err.Error(), "The requested resource does not exist") {
@@ -70,8 +69,7 @@ func testFilterConfig(n string, filterConfig *sentry.FilterConfig, browserExtens
 		}
 
 		ctx := context.Background()
-		client := testAccProvider.Meta().(*sentry.Client)
-		filterConfig, _, err := client.ProjectFilter.GetFilterConfig(ctx, testOrganization, rs.Primary.Attributes["project"])
+		filterConfig, _, err := acctest.SharedClient.ProjectFilters.GetFilterConfig(ctx, acctest.TestOrganization, rs.Primary.Attributes["project"])
 		if err != nil {
 			return err
 		}
@@ -91,12 +89,12 @@ func testFilterConfig(n string, filterConfig *sentry.FilterConfig, browserExtens
 }
 
 func testAccSentryProjectFilterConfig(teamName string, projectName string) string {
-	return testAccSentryProjectConfig(teamName, projectName) + fmt.Sprintf(`
+	return testAccSentryProjectConfig_team(teamName, projectName) + fmt.Sprintf(`
 resource "sentry_filter" "test_filter" {
 	organization = "%s"
 	project = sentry_project.test.id
 	browser_extension = true
   legacy_browsers = ["ie_pre_9","ie10"]
 }
-`, testOrganization)
+`, acctest.TestOrganization)
 }
