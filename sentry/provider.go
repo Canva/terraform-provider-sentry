@@ -3,9 +3,10 @@ package sentry
 import (
 	"context"
 
-	"github.com/canva/terraform-provider-sentry/internal/sentryclient"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/canva/terraform-provider-sentry/internal/sentryclient"
 )
 
 func init() {
@@ -22,7 +23,7 @@ func NewProvider(version string) func() *schema.Provider {
 				"token": {
 					Description: "The authentication token used to connect to Sentry. The value can be sourced from " + "the `SENTRY_AUTH_TOKEN` environment variable.",
 					Type:        schema.TypeString,
-					Required:    true,
+					Optional:    true,
 					DefaultFunc: schema.MultiEnvDefaultFunc([]string{"SENTRY_AUTH_TOKEN", "SENTRY_TOKEN"}, nil),
 					Sensitive:   true,
 				},
