@@ -178,7 +178,9 @@ func (v LossyJson) Unmarshal(target any) diag.Diagnostics {
 
 	err := json.Unmarshal([]byte(v.ValueString()), target)
 	if err != nil {
-		diags.Append(diag.NewErrorDiagnostic("Lossy JSON Unmarshal Error", err.Error()))
+		diags.Append(diag.NewErrorDiagnostic("Lossy JSON Unmarshal Error", fmt.Sprintf(
+			"stringValue=%q, error=%v", v.ValueString(), err,
+		)))
 	}
 
 	return diags
