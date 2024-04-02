@@ -137,7 +137,7 @@ Please note the following changes since v0.12.0:
 			},
 			"conditions": schema.StringAttribute{
 				MarkdownDescription: "List of conditions. In JSON string format.",
-				Required:            true,
+				Optional:            true,
 				CustomType:          sentrytypes.LossyJsonType{},
 			},
 			"filters": schema.StringAttribute{
