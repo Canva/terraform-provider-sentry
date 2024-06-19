@@ -5,34 +5,36 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-	"github.com/canva/terraform-provider-sentry/internal/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"github.com/jianyuan/terraform-provider-sentry/internal/acctest"
 )
 
 func TestAccProjectSpikeProtectionResource(t *testing.T) {
 	rn := "sentry_project_spike_protection.test"
-	team := acctest.RandomWithPrefix("tf-team")
-	project := acctest.RandomWithPrefix("tf-project")
+	teamName := acctest.RandomWithPrefix("tf-team")
+	projectName := acctest.RandomWithPrefix("tf-project")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProjectSpikeProtectionConfig(team, project, true),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
-					resource.TestCheckResourceAttr(rn, "project", project),
-					resource.TestCheckResourceAttr(rn, "enabled", "true"),
-				),
+				Config: testAccProjectSpikeProtectionResourceConfig(teamName, projectName, true),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("organization"), knownvalue.StringExact(acctest.TestOrganization)),
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("project"), knownvalue.StringExact(projectName)),
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("enabled"), knownvalue.Bool(true)),
+				},
 			},
 			{
-				Config: testAccProjectSpikeProtectionConfig(team, project, false),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(rn, "organization", acctest.TestOrganization),
-					resource.TestCheckResourceAttr(rn, "project", project),
-					resource.TestCheckResourceAttr(rn, "enabled", "false"),
-				),
+				Config: testAccProjectSpikeProtectionResourceConfig(teamName, projectName, false),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("organization"), knownvalue.StringExact(acctest.TestOrganization)),
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("project"), knownvalue.StringExact(projectName)),
+					statecheck.ExpectKnownValue(rn, tfjsonpath.New("enabled"), knownvalue.Bool(false)),
+				},
 			},
 			{
 				ResourceName:      rn,
@@ -43,7 +45,7 @@ func TestAccProjectSpikeProtectionResource(t *testing.T) {
 	})
 }
 
-func testAccProjectSpikeProtectionConfig(teamName string, projectName string, enabled bool) string {
+func testAccProjectSpikeProtectionResourceConfig(teamName, projectName string, enabled bool) string {
 	return testAccOrganizationDataSourceConfig + fmt.Sprintf(`
 resource "sentry_team" "test" {
 	organization = data.sentry_organization.test.id

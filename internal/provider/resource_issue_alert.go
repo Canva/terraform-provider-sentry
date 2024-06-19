@@ -22,6 +22,7 @@ import (
 )
 
 var _ resource.Resource = &IssueAlertResource{}
+var _ resource.ResourceWithConfigure = &IssueAlertResource{}
 var _ resource.ResourceWithImportState = &IssueAlertResource{}
 var _ resource.ResourceWithUpgradeState = &IssueAlertResource{}
 
@@ -30,7 +31,7 @@ func NewIssueAlertResource() resource.Resource {
 }
 
 type IssueAlertResource struct {
-	client *sentry.Client
+	baseResource
 }
 
 type IssueAlertResourceModel struct {
@@ -57,7 +58,7 @@ func (m *IssueAlertResourceModel) Fill(organization string, alert sentry.IssueAl
 	m.FilterMatch = types.StringPointerValue(alert.FilterMatch)
 	m.Owner = types.StringPointerValue(alert.Owner)
 
-	m.Conditions = sentrytypes.NewLossyJsonNull()
+	m.Conditions = sentrytypes.NewLossyJsonValue("[]")
 	if len(alert.Conditions) > 0 {
 		if conditions, err := json.Marshal(alert.Conditions); err == nil {
 			m.Conditions = sentrytypes.NewLossyJsonValue(string(conditions))
@@ -178,26 +179,6 @@ Please note the following changes since v0.12.0:
 			},
 		},
 	}
-}
-
-func (r *IssueAlertResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*sentry.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *sentry.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
 }
 
 func (r *IssueAlertResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

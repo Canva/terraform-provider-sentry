@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,6 +21,7 @@ import (
 )
 
 var _ resource.Resource = &TeamMemberResource{}
+var _ resource.ResourceWithConfigure = &TeamMemberResource{}
 var _ resource.ResourceWithImportState = &TeamMemberResource{}
 
 func NewTeamMemberResource() resource.Resource {
@@ -27,7 +29,7 @@ func NewTeamMemberResource() resource.Resource {
 }
 
 type TeamMemberResource struct {
-	client *sentry.Client
+	baseResource
 
 	roleMu sync.Mutex
 }
@@ -99,26 +101,6 @@ func (r *TeamMemberResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 		},
 	}
-}
-
-func (r *TeamMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*sentry.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *sentry.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
 }
 
 func getEffectiveOrgRole(memberOrgRoles []string, orgRoleList []sentry.OrganizationRoleListItem) *sentry.OrganizationRoleListItem {
@@ -295,8 +277,11 @@ func (r *TeamMemberResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	effectiveRole, err := r.getEffectiveTeamRole(ctx, data.Organization.ValueString(), data.MemberId.ValueString(), data.Team.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		resp.State.RemoveResource(ctx)
+		if strings.Contains(err.Error(), "404 The requested resource does not exist") {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Client Error", err.Error())
+		}
 		return
 	}
 

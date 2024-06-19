@@ -16,6 +16,7 @@ import (
 )
 
 var _ resource.Resource = &ProjectSpikeProtectionResource{}
+var _ resource.ResourceWithConfigure = &ProjectSpikeProtectionResource{}
 var _ resource.ResourceWithImportState = &ProjectSpikeProtectionResource{}
 
 func NewProjectSpikeProtectionResource() resource.Resource {
@@ -23,7 +24,7 @@ func NewProjectSpikeProtectionResource() resource.Resource {
 }
 
 type ProjectSpikeProtectionResource struct {
-	client *sentry.Client
+	baseResource
 }
 
 type ProjectSpikeProtectionResourceModel struct {
@@ -54,46 +55,26 @@ func (r *ProjectSpikeProtectionResource) Schema(ctx context.Context, req resourc
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of this resource.",
-				Computed:    true,
+				MarkdownDescription: "The ID of this resource.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"organization": schema.StringAttribute{
-				Description: "The slug of the organization the project belongs to.",
-				Required:    true,
+				MarkdownDescription: "The slug of the organization the project belongs to.",
+				Required:            true,
 			},
 			"project": schema.StringAttribute{
-				Description: "The slug of the project to create the filter for.",
-				Required:    true,
+				MarkdownDescription: "The slug of the project to enable or disable spike protection for.",
+				Required:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Toggle the browser-extensions, localhost, filtered-transaction, or web-crawlers filter on or off.",
-				Required:    true,
+				MarkdownDescription: "Toggle the browser-extensions, localhost, filtered-transaction, or web-crawlers filter on or off.",
+				Required:            true,
 			},
 		},
 	}
-}
-
-func (r *ProjectSpikeProtectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*sentry.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *sentry.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
 }
 
 func (r *ProjectSpikeProtectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
