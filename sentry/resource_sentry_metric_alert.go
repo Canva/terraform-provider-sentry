@@ -211,6 +211,9 @@ func resourceSentryMetricAlertObject(d *schema.ResourceData) (*sentry.MetricAler
 	if v, ok := d.GetOk("resolve_threshold"); ok {
 		alert.ResolveThreshold = sentry.Float64(v.(float64))
 	}
+	if v, ok := d.GetOk("comparison_delta"); ok {
+		alert.ComparisonDelta = sentry.Float64(v.(float64))
+	}
 	if v, ok := d.GetOk("owner"); ok {
 		alert.Owner = sentry.String(v.(string))
 	}

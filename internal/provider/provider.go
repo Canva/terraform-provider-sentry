@@ -95,6 +95,10 @@ func (p *SentryProvider) Configure(ctx context.Context, req provider.ConfigureRe
 
 func (p *SentryProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAllProjectsSpikeProtectionResource,
+		NewClientKeyResource,
+		NewIntegrationOpsgenie,
+		NewIntegrationPagerDuty,
 		NewIssueAlertResource,
 		NewNotificationActionResource,
 		NewProjectInboundDataFilterResource,
@@ -106,9 +110,13 @@ func (p *SentryProvider) Resources(ctx context.Context) []func() resource.Resour
 
 func (p *SentryProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewAllClientKeysDataSource,
+		NewAllProjectsDataSource,
+		NewClientKeyDataSource,
 		NewIssueAlertDataSource,
 		NewOrganizationIntegrationDataSource,
 		NewOrganizationMemberDataSource,
+		NewProjectDataSource,
 	}
 }
 

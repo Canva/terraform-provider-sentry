@@ -22,6 +22,14 @@ var (
 	// TestOrganization is the organization used for acceptance tests.
 	TestOrganization = os.Getenv("SENTRY_TEST_ORGANIZATION")
 
+	// TestPagerDutyOrganization is the PagerDuty organization used for acceptance tests.
+	TestPagerDutyOrganization = os.Getenv("SENTRY_TEST_PAGERDUTY_ORGANIZATION")
+
+	// TestOpsgenieOrganization is the Opsgenie organization used for acceptance tests.
+	TestOpsgenieOrganization = os.Getenv("SENTRY_TEST_OPSGENIE_ORGANIZATION")
+	// TestOpsgenieIntegrationKey is the Opsgenie integration key used for acceptance tests.
+	TestOpsgenieIntegrationKey = os.Getenv("SENTRY_TEST_OPSGENIE_INTEGRATION_KEY")
+
 	// SharedClient is a shared Sentry client for acceptance tests.
 	SharedClient *sentry.Client
 )

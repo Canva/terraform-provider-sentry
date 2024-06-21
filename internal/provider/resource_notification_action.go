@@ -23,6 +23,7 @@ import (
 )
 
 var _ resource.Resource = &NotificationActionResource{}
+var _ resource.ResourceWithConfigure = &NotificationActionResource{}
 var _ resource.ResourceWithImportState = &NotificationActionResource{}
 
 func NewNotificationActionResource() resource.Resource {
@@ -30,7 +31,7 @@ func NewNotificationActionResource() resource.Resource {
 }
 
 type NotificationActionResource struct {
-	client *sentry.Client
+	baseResource
 }
 
 type NotificationActionResourceModel struct {
@@ -104,8 +105,11 @@ func (r *NotificationActionResource) Schema(ctx context.Context, req resource.Sc
 				Required:    true,
 			},
 			"trigger_type": schema.StringAttribute{
-				Description: "The type of trigger that will activate this action. Valid values are `spike_protection`.",
+				Description: "The type of trigger that will activate this action. Valid values are `spike-protection`.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("spike-protection"),
+				},
 			},
 			"service_type": schema.StringAttribute{
 				Description: "The service that is used for sending the notification.",
@@ -133,26 +137,6 @@ func (r *NotificationActionResource) Schema(ctx context.Context, req resource.Sc
 			},
 		},
 	}
-}
-
-func (r *NotificationActionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*sentry.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *sentry.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
 }
 
 func (r *NotificationActionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

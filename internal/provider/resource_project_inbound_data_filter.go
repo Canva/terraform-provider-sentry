@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -20,6 +20,7 @@ import (
 )
 
 var _ resource.Resource = &ProjectInboundDataFilterResource{}
+var _ resource.ResourceWithConfigure = &ProjectInboundDataFilterResource{}
 var _ resource.ResourceWithImportState = &ProjectInboundDataFilterResource{}
 
 func NewProjectInboundDataFilterResource() resource.Resource {
@@ -27,7 +28,7 @@ func NewProjectInboundDataFilterResource() resource.Resource {
 }
 
 type ProjectInboundDataFilterResource struct {
-	client *sentry.Client
+	baseResource
 }
 
 type ProjectInboundDataFilterResourceModel struct {
@@ -36,7 +37,7 @@ type ProjectInboundDataFilterResourceModel struct {
 	Project      types.String `tfsdk:"project"`
 	FilterId     types.String `tfsdk:"filter_id"`
 	Active       types.Bool   `tfsdk:"active"`
-	Subfilters   types.List   `tfsdk:"subfilters"`
+	Subfilters   types.Set    `tfsdk:"subfilters"`
 }
 
 func (m *ProjectInboundDataFilterResourceModel) Fill(organization string, project string, filterId string, filter sentry.ProjectInboundDataFilter) error {
@@ -53,7 +54,7 @@ func (m *ProjectInboundDataFilterResourceModel) Fill(organization string, projec
 			subfilterElements = append(subfilterElements, types.StringValue(subfilter))
 		}
 
-		m.Subfilters = types.ListValueMust(types.StringType, subfilterElements)
+		m.Subfilters = types.SetValueMust(types.StringType, subfilterElements)
 	}
 
 	return nil
@@ -96,38 +97,18 @@ func (r *ProjectInboundDataFilterResource) Schema(ctx context.Context, req resou
 					),
 				},
 			},
-			"subfilters": schema.ListAttribute{
+			"subfilters": schema.SetAttribute{
 				Description: "Specifies which legacy browser filters should be active. Anything excluded from the list will be disabled. See the [Sentry documentation](https://docs.sentry.io/api/projects/update-an-inbound-data-filter/) for a list of available subfilters.",
 				Optional:    true,
 				ElementType: types.StringType,
-				Validators: []validator.List{
-					listvalidator.ConflictsWith(
+				Validators: []validator.Set{
+					setvalidator.ConflictsWith(
 						path.MatchRelative().AtParent().AtName("active"),
 					),
 				},
 			},
 		},
 	}
-}
-
-func (r *ProjectInboundDataFilterResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*sentry.Client)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *sentry.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
 }
 
 func (r *ProjectInboundDataFilterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

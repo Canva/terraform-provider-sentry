@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
@@ -18,10 +19,10 @@ func init() {
 		F: func(r string) error {
 			ctx := context.Background()
 
-			listParams := &sentry.ListCursorParams{}
+			listParams := &sentry.ListOrganizationProjectsParams{}
 
 			for {
-				projects, resp, err := acctest.SharedClient.Projects.List(ctx, listParams)
+				projects, resp, err := acctest.SharedClient.OrganizationProjects.List(ctx, acctest.TestOrganization, listParams)
 				if err != nil {
 					return err
 				}
@@ -51,4 +52,15 @@ func init() {
 			return nil
 		},
 	})
+}
+
+func testAccProjectResourceConfig(teamName, projectName string) string {
+	return testAccTeamResourceConfig(teamName) + fmt.Sprintf(`
+resource "sentry_project" "test" {
+	organization = sentry_team.test.organization
+	teams        = [sentry_team.test.id]
+	name         = "%[1]s"
+	platform     = "go"
+}
+`, projectName)
 }
