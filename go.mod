@@ -89,4 +89,4 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-replace github.com/jianyuan/go-sentry/v2 => github.com/canva/go-sentry/v2 v2.7.0-canva-1
+replace github.com/jianyuan/go-sentry/v2 => github.com/canva/go-sentry/v2 v2.8.1-canva-1
