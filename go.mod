@@ -88,5 +88,3 @@ require (
 	google.golang.org/protobuf v1.34.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
-
-replace github.com/jianyuan/go-sentry/v2 => /Users/marten/work/go-sentry // github.com/canva/go-sentry/v2 v2.7.0-canva-1
