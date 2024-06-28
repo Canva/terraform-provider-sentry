@@ -219,6 +219,7 @@ func (r *IssueAlertResource) Create(ctx context.Context, req resource.CreateRequ
 		data.Project.ValueString(),
 		params,
 	)
+	
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Error creating issue alert: %s", err.Error()))
 		return
@@ -251,6 +252,10 @@ func (r *IssueAlertResource) Read(ctx context.Context, req resource.ReadRequest,
 		data.Project.ValueString(),
 		data.Id.ValueString(),
 	)
+	// Remove task UUID as it's not needed, otherwise it will end up in the JSON output and cause
+	// 'Provider caused inconsistent result after apply' errors.
+	action.TaskUUID = nil
+
 	if apiResp.StatusCode == http.StatusNotFound {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Issue alert not found: %s", err.Error()))
 		resp.State.RemoveResource(ctx)
@@ -308,6 +313,10 @@ func (r *IssueAlertResource) Update(ctx context.Context, req resource.UpdateRequ
 		data.Id.ValueString(),
 		params,
 	)
+	// Remove task UUID as it's not needed, otherwise it will end up in the JSON output and cause
+	// 'Provider caused inconsistent result after apply' errors.
+	action.TaskUUID = nil
+
 	if apiResp.StatusCode == http.StatusNotFound {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Notification Action not found: %s", err.Error()))
 		resp.State.RemoveResource(ctx)
